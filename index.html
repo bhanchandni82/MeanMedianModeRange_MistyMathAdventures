@@ -1,589 +1,863 @@
-<!doctype html>
+<!DOCTYPE html>
 <html lang="en">
 <head>
-  <meta charset="utf-8" />
-  <meta name="viewport" content="width=device-width,initial-scale=1" />
-  <title>Misty Math Adventures — Mean/Median/Mode/Range</title>
-
-  <!-- Confetti (works on static Pages) -->
-  <script src="https://cdn.jsdelivr.net/npm/canvas-confetti@1.9.2/dist/confetti.browser.min.js"></script>
-
-  <style>
-    :root{
-      --bg:#f1f5f9;
-      --card:#ffffff;
-      --ink:#0f172a;
-      --muted:#64748b;
-      --brand:#4f46e5;
-      --brand2:#4338ca;
-      --ok:#22c55e;
-      --bad:#ef4444;
-      --soft:#eef2ff;
-      --border:#e5e7eb;
-      --shadow: 0 18px 40px rgba(2,6,23,0.12);
-      --radius: 28px;
-    }
-    *{ box-sizing:border-box; }
-    body{
-      margin:0; font-family: ui-sans-serif, system-ui, -apple-system, Segoe UI, Roboto, Arial;
-      background:var(--bg); color:var(--ink);
-    }
-    .wrap{ max-width: 980px; margin: 0 auto; padding: 24px; }
-    .header{
-      display:flex; align-items:center; justify-content:space-between;
-      background:var(--card); border:1px solid var(--border);
-      border-bottom:6px solid #c7d2fe;
-      padding:18px; border-radius: var(--radius);
-      box-shadow: 0 10px 25px rgba(2,6,23,0.06);
-      gap:16px;
-    }
-    .brand{
-      display:flex; gap:14px; align-items:center;
-    }
-    .logo{
-      width:58px; height:58px; border-radius:20px;
-      display:flex; align-items:center; justify-content:center;
-      background: var(--brand); color:white; font-size:30px;
-    }
-    .title{ line-height:1.1; }
-    .title h1{ margin:0; font-size:26px; font-weight:900; }
-    .title p{ margin:4px 0 0; color:var(--muted); font-weight:800; }
-    .minutes{
-      display:flex; align-items:center; gap:10px;
-      background: #0b1226; color:white; padding:10px 14px;
-      border-radius:20px; font-weight:900;
-    }
-    .grid{
-      display:grid; grid-template-columns: repeat(3, minmax(0,1fr));
-      gap:16px; margin-top:18px;
-    }
-    @media (max-width: 820px){
-      .grid{ grid-template-columns: repeat(2, minmax(0,1fr)); }
-    }
-    .topic{
-      background:var(--card);
-      border:2px solid transparent;
-      border-radius: 26px;
-      padding:26px;
-      font-weight:900;
-      font-size:24px;
-      cursor:pointer;
-      box-shadow: 0 12px 22px rgba(2,6,23,0.08);
-      transition: transform .08s ease, border-color .12s ease;
-    }
-    .topic:hover{ border-color:#a5b4fc; }
-    .topic:active{ transform: scale(.98); }
-
-    /* Quiz */
-    .topbar{
-      display:flex; justify-content:space-between; align-items:center;
-      padding: 10px 6px; margin-top: 10px;
-    }
-    .exit{
-      border:none; background:transparent; color:var(--muted);
-      font-weight:900; cursor:pointer; display:flex; align-items:center; gap:8px;
-    }
-    .exit:hover{ color:var(--brand2); }
-    .counter{ font-weight:900; color:#1e293b; letter-spacing:.14em; font-size:12px; text-transform:uppercase; }
-    .progress{
-      width:100%; height:8px; background:#e0e7ff; border-radius:999px; overflow:hidden;
-      margin-top: 16px;
-    }
-    .bar{ height:100%; width:0%; background:var(--brand); transition: width .25s ease; }
-
-    .card{
-      background:var(--card);
-      border-radius: 36px;
-      border:1px solid var(--border);
-      box-shadow: var(--shadow);
-      overflow:hidden;
-      margin-top: 10px;
-    }
-    .cardTop{ padding: 24px; text-align:center; }
-    .nums{
-      display:flex; gap:10px; justify-content:center; flex-wrap:wrap;
-      margin-bottom: 16px;
-    }
-    .num{
-      width:54px; height:54px; border-radius:18px;
-      display:flex; align-items:center; justify-content:center;
-      font-weight:900; font-size:22px;
-      background: var(--soft);
-      border:2px solid #e0e7ff;
-      color:#1e40af;
-    }
-    .question{
-      font-size:28px; font-weight:950; margin:0;
-    }
-    .options{ padding: 0 18px 22px; display:grid; gap:10px; }
-    .opt{
-      width:100%;
-      display:flex; align-items:center; justify-content:space-between;
-      padding: 16px 16px;
-      border-radius: 20px;
-      border:2px solid #e0e7ff;
-      background: #eef2ff;
-      color:#1e3a8a;
-      font-weight:950;
-      font-size:20px;
-      cursor:pointer;
-      transition: background .12s ease, transform .05s ease;
-    }
-    .opt:hover{ background: var(--brand); color:white; }
-    .opt:active{ transform: scale(.99); }
-    .opt[disabled]{ opacity:.7; cursor:not-allowed; }
-
-    .opt.correct{
-      background: var(--ok) !important;
-      border-color: #16a34a !important;
-      color:white !important;
-    }
-    .opt.wrong{
-      background: #fee2e2 !important;
-      border-color: #fecaca !important;
-      color:#7f1d1d !important;
-    }
-
-    /* Blackboard (wrong answer helper) */
-    .overlay{
-      position: fixed; inset:0; background: rgba(2,6,23,.60);
-      display:none; align-items:flex-end; justify-content:center;
-      padding: 14px;
-      z-index: 999;
-    }
-    .sheet{
-      width: min(980px, 100%);
-      background:#111827;
-      border-radius: 18px;
-      overflow:hidden;
-      border:1px solid rgba(255,255,255,.08);
-    }
-    .sheetTop{
-      padding: 14px 16px;
-      display:flex; justify-content:space-between; align-items:center;
-      border-bottom:1px solid rgba(255,255,255,.10);
-      color:white;
-    }
-    .sheetTop .left{ display:flex; gap:10px; align-items:center; }
-    .tag{ font-size:11px; font-weight:900; letter-spacing:.16em; text-transform:uppercase; color:#facc15; }
-    .oops{ font-size:11px; font-weight:900; letter-spacing:.12em; color:#fb7185; text-transform:uppercase; }
-
-    .sheetBody{
-      padding: 14px 16px 10px;
-      max-height: 55vh;
-      overflow:auto;
-      color:white;
-      font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
-    }
-    .hintIntro{
-      background: rgba(255,255,255,.06);
-      border-left: 4px solid #6366f1;
-      padding: 10px 12px;
-      border-radius: 10px;
-      margin-bottom: 12px;
-      color:#c7d2fe;
-      font-weight:800;
-      font-style: italic;
-    }
-    .step{
-      margin: 14px 0;
-      padding-bottom: 14px;
-      border-bottom: 1px dashed rgba(255,255,255,.12);
-    }
-    .stepHead{
-      color:#22c55e; font-weight:900; font-size:12px; letter-spacing:.1em; text-transform:uppercase;
-      margin-bottom: 8px;
-    }
-    .expected{
-      display:inline-block;
-      margin-top: 10px;
-      font-weight:950;
-      font-size:22px;
-      background: rgba(255,255,255,.06);
-      padding: 8px 10px;
-      border-radius: 10px;
-      color:#fde68a;
-    }
-    .sheetActions{
-      display:flex; gap:10px;
-      padding: 12px 12px;
-      border-top: 1px solid rgba(255,255,255,.10);
-      background:#0b1220;
-    }
-    .btn{
-      border:none; cursor:pointer; font-weight:950;
-      padding: 14px 14px;
-      border-radius: 14px;
-    }
-    .btnNext{
-      flex:1;
-      background:#facc15; color:black;
-      box-shadow: 0 4px 0 rgb(161,120,0);
-    }
-    .btnNext:active{ transform: translateY(2px); box-shadow:none; }
-    .btnSkip{
-      background: rgba(255,255,255,.10);
-      color: rgba(255,255,255,.80);
-      border: 1px solid rgba(255,255,255,.12);
-      text-transform: uppercase;
-      letter-spacing: .12em;
-      font-size: 11px;
-      font-weight: 900;
-      min-width: 110px;
-    }
-
-    /* Results */
-    .results{
-      max-width: 620px; margin: 40px auto 0; text-align:center;
-    }
-    .resultsCard{
-      background:var(--card);
-      border-radius: 40px;
-      border:1px solid var(--border);
-      box-shadow: var(--shadow);
-      padding: 42px 28px;
-    }
-    .resultsCard h2{ margin:0; font-size:42px; font-weight:950; }
-    .resultsCard p{ margin: 14px 0 0; font-size:22px; font-weight:900; color: var(--brand); }
-    .btnPrimary{
-      margin-top: 22px;
-      width:100%;
-      background: var(--brand);
-      color:white;
-      font-size: 20px;
-      font-weight: 950;
-      padding: 16px 16px;
-      border-radius: 18px;
-      border:none;
-      cursor:pointer;
-    }
-    .btnPrimary:hover{ background: var(--brand2); }
-  </style>
-</head>
-
-<body>
-  <div class="wrap" id="app"></div>
-
-  <!-- Wrong-answer overlay -->
-  <div class="overlay" id="overlay">
-    <div class="sheet">
-      <div class="sheetTop">
-        <div class="left">
-          <span style="font-size:18px">🐾</span>
-          <span class="tag">Dojo Correction</span>
-        </div>
-        <div class="oops">Oops! Incorrect</div>
-      </div>
-
-      <div class="sheetBody" id="overlayBody"></div>
-
-      <div class="sheetActions">
-        <button class="btn btnNext" id="btnNext">Next Question →</button>
-        <button class="btn btnSkip" id="btnSkip">Skip</button>
-      </div>
-    </div>
-  </div>
-
-<script>
-/* ------------------------------
-   Core Logic (vanilla JS version)
------------------------------- */
-
-const TOPICS = ["Mean","Median","Mode","Range","Random"];
-
-function generateData(count, min, max){
-  return Array.from({length:count}, () => Math.floor(Math.random()*(max-min+1))+min);
-}
-
-function generateQuestion(topic, id){
-  const dataSize = Math.floor(Math.random()*3)+4; // 4-6
-  let data = generateData(dataSize, 2, 12);
-  let questionText = "";
-  let correctAnswer = "";
-  let steps = [];
-
-  switch(topic){
-    case "Mean":{
-      const sum = data.reduce((a,b)=>a+b,0);
-      const cleanSum = Math.round(sum / data.length) * data.length;
-      if(sum !== cleanSum) data[0] += (cleanSum - sum);
-      const finalMean = cleanSum / data.length;
-      questionText = `What is the mean of these ${data.length} numbers?`;
-      correctAnswer = String(finalMean);
-      steps = [
-        { id:"s1", instruction:`Step 1: Add them up: ${data.join(" + ")}`, expected:String(cleanSum) },
-        { id:"s2", instruction:`Step 2: Divide by the count: ${cleanSum} ÷ ${data.length}`, expected:String(correctAnswer) }
-      ];
-      break;
-    }
-    case "Median":{
-      const sorted = [...data].sort((a,b)=>a-b);
-      while(JSON.stringify(data) === JSON.stringify(sorted)){
-        data.sort(()=>Math.random()-0.5);
-      }
-      const isEven = data.length % 2 === 0;
-      const mid = Math.floor(data.length/2);
-      const medianValue = !isEven ? sorted[mid] : (sorted[mid-1] + sorted[mid]) / 2;
-      questionText = "Find the median (middle number).";
-      correctAnswer = String(medianValue);
-      steps = [
-        { id:"s1", instruction:"Step 1: Put the numbers in order from smallest to largest.", expected:sorted.join(", ") },
-        { id:"s2", instruction:`Step 2: Count the numbers. We have ${data.length} numbers.`, expected:isEven ? "It's an even count!" : "It's an odd count!" },
-        { id:"s3", instruction: isEven
-            ? `Step 3: Average the two middle numbers: (${sorted[mid-1]} + ${sorted[mid]}) ÷ 2`
-            : `Step 3: The middle number is simply ${sorted[mid]}.`,
-          expected:String(correctAnswer)
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Mr. Meowgi's Stats Dojo</title>
+    <!-- External Confetti Library -->
+    <script src="https://cdn.jsdelivr.net/npm/canvas-confetti@1.6.0/dist/confetti.browser.min.js"></script>
+    <style>
+        :root {
+            --indigo-50: #f8fafc;
+            --indigo-100: #e2e8f0;
+            --indigo-400: #818cf8;
+            --indigo-500: #6366f1;
+            --indigo-600: #4f46e5;
+            --indigo-700: #4338ca;
+            --indigo-800: #3730a3;
+            --indigo-900: #312e81;
+            --bg-slate: #f1f5f9;
+            --correct-green: #22c55e;
+            --wrong-pink: #f472b6;
         }
-      ];
-      break;
-    }
-    case "Mode":{
-      data[0]=5; data[1]=5;
-      const counts = {};
-      data.forEach(n => counts[n] = (counts[n]||0)+1);
-      const modeValue = Object.keys(counts).reduce((a,b)=> (counts[parseInt(a)] > counts[parseInt(b)] ? a : b));
-      questionText = "Which number is the mode?";
-      correctAnswer = String(modeValue);
-      steps = [
-        { id:"s1", instruction:"Step 1: Look for the number that appears most frequently in the set.", expected:`Number ${modeValue} is the winner!` }
-      ];
-      break;
-    }
-    case "Range":{
-      const maxVal = Math.max(...data);
-      const minVal = Math.min(...data);
-      const rangeVal = maxVal - minVal;
-      questionText = "What is the range of this set?";
-      correctAnswer = String(rangeVal);
-      steps = [
-        { id:"s1", instruction:"Step 1: Identify the maximum and minimum values in the set.", expected:`Max: ${maxVal}, Min: ${minVal}` },
-        { id:"s2", instruction:`Step 2: Subtract the minimum from the maximum: ${maxVal} - ${minVal}`, expected:String(rangeVal) }
-      ];
-      break;
-    }
-    default:
-      return generateQuestion("Mean", id);
-  }
 
-  const optionSet = new Set([correctAnswer]);
-  while(optionSet.size < 3){
-    const randomOffset = Math.floor(Math.random()*5)+1;
-    const distractor = (parseFloat(correctAnswer) + (Math.random() > 0.5 ? randomOffset : -randomOffset)).toString();
-    if(distractor !== "0" && !optionSet.has(distractor)) optionSet.add(distractor);
-  }
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+        }
 
-  const options = Array.from(optionSet).sort(()=>Math.random()-0.5);
+        body {
+            background-color: var(--bg-slate);
+            min-height: 100vh;
+            padding: 2rem 1rem;
+            overflow-x: hidden;
+        }
 
-  return { id, topic, data, questionText, options, correctAnswer, steps };
-}
+        .container {
+            max-width: 896px;
+            margin: 0 auto;
+        }
 
-/* ------------------------------
-   App State + Rendering
------------------------------- */
-const app = document.getElementById("app");
-const overlay = document.getElementById("overlay");
-const overlayBody = document.getElementById("overlayBody");
-const btnNext = document.getElementById("btnNext");
-const btnSkip = document.getElementById("btnSkip");
+        .hidden { display: none !important; }
 
-let view = "Home"; // Home | Quiz | Results
-let unlockedMinutes = 0;
+        header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            background: white;
+            padding: 1.5rem;
+            border-radius: 1.5rem;
+            box-shadow: 0 1px 3px rgba(0,0,0,0.1);
+            border-bottom: 4px solid var(--indigo-100);
+            margin-bottom: 2rem;
+        }
 
-let quiz = null; // { questions, currentIndex, score, topic }
-let feedback = "NONE"; // NONE | CORRECT | WRONG
+        .header-left {
+            display: flex;
+            align-items: center;
+            gap: 1rem;
+        }
 
-function setView(next){
-  view = next;
-  render();
-}
+        .logo-box {
+            font-size: 2.5rem;
+            background: var(--indigo-500);
+            width: 4rem;
+            height: 4rem;
+            border-radius: 1rem;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
 
-function startQuiz(topic){
-  const questions = Array.from({length:10}, (_,i)=>{
-    const qTopic = (topic === "Random")
-      ? ["Mean","Median","Mode","Range"][Math.floor(Math.random()*4)]
-      : topic;
-    return generateQuestion(qTopic, `q-${i}`);
-  });
-  quiz = { questions, currentIndex:0, score:0, topic };
-  feedback = "NONE";
-  hideOverlay();
-  setView("Quiz");
-}
+        .header-text h1 {
+            font-size: 1.875rem;
+            font-weight: 900;
+            color: var(--indigo-900);
+            line-height: 1.2;
+        }
 
-function nextQuestion(){
-  if(!quiz) return;
-  feedback = "NONE";
-  hideOverlay();
-  quiz.currentIndex += 1;
-  if(quiz.currentIndex >= 10){
-    setView("Results");
-  } else {
-    render();
-  }
-}
+        .header-text p {
+            color: var(--indigo-400);
+            font-weight: bold;
+        }
 
-function showOverlayForWrong(q){
-  overlayBody.innerHTML = "";
-  const intro = document.createElement("div");
-  intro.className = "hintIntro";
-  intro.textContent = "Oops! That was incorrect. Here is how to get it right next time.";
-  overlayBody.appendChild(intro);
+        .stats-badge {
+            background: var(--indigo-900);
+            color: white;
+            padding: 0.5rem 1.5rem;
+            border-radius: 1rem;
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+            font-weight: bold;
+            font-size: 1.25rem;
+        }
 
-  q.steps.forEach((s, idx)=>{
-    const step = document.createElement("div");
-    step.className = "step";
+        .topics-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 1.5rem;
+        }
 
-    const head = document.createElement("div");
-    head.className = "stepHead";
-    head.textContent = `Step ${idx+1}`;
-    step.appendChild(head);
+        .topic-card {
+            background: white;
+            padding: 2.5rem;
+            border-radius: 1.5rem;
+            border: 2px solid transparent;
+            box-shadow: 0 4px 6px rgba(0,0,0,0.05);
+            cursor: pointer;
+            transition: all 0.2s ease;
+            text-align: center;
+        }
 
-    const instr = document.createElement("div");
-    instr.style.fontSize = "16px";
-    instr.style.lineHeight = "1.5";
-    instr.textContent = s.instruction;
-    step.appendChild(instr);
+        .topic-card:hover {
+            border-color: var(--indigo-400);
+            transform: translateY(-2px);
+        }
 
-    const exp = document.createElement("div");
-    exp.className = "expected";
-    exp.textContent = `= ${s.expected}`;
-    step.appendChild(exp);
+        .topic-card h3 {
+            font-size: 1.875rem;
+            font-weight: 900;
+            color: var(--indigo-900);
+        }
 
-    overlayBody.appendChild(step);
-  });
+        .progress-container {
+            width: 100%;
+            height: 0.75rem;
+            display: flex;
+            gap: 0.5rem;
+            margin-bottom: 1.5rem;
+        }
 
-  overlay.style.display = "flex";
-}
+        .progress-segment {
+            flex: 1;
+            background: var(--indigo-100);
+            border-radius: 999px;
+            transition: background-color 0.4s ease, transform 0.2s ease;
+        }
 
-function hideOverlay(){
-  overlay.style.display = "none";
-}
+        .progress-segment.current {
+            background: var(--indigo-400);
+            transform: scaleY(1.2);
+        }
 
-btnNext.addEventListener("click", nextQuestion);
-btnSkip.addEventListener("click", nextQuestion);
+        .progress-segment.correct {
+            background: var(--correct-green);
+        }
 
-function handleAnswer(selected){
-  if(!quiz || feedback !== "NONE") return;
-  const q = quiz.questions[quiz.currentIndex];
-  const isCorrect = selected === q.correctAnswer;
+        .progress-segment.wrong {
+            background: var(--wrong-pink);
+        }
 
-  if(isCorrect){
-    feedback = "CORRECT";
-    quiz.score += 1;
-    // reward minutes lightly (optional)
-    unlockedMinutes += 0.25;
+        .quiz-nav {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 1rem;
+        }
 
-    if(window.confetti){
-      window.confetti({ particleCount: 60, spread: 60, origin: { y: 0.7 } });
-    }
+        .exit-btn {
+            background: none;
+            border: none;
+            color: var(--indigo-400);
+            font-weight: bold;
+            display: flex;
+            align-items: center;
+            gap: 0.25rem;
+            cursor: pointer;
+        }
 
-    render();
-    setTimeout(nextQuestion, 900);
-  } else {
-    feedback = "WRONG";
-    render();
-    showOverlayForWrong(q);
-  }
-}
+        .q-counter {
+            color: var(--indigo-800);
+            font-weight: 900;
+            font-size: 0.75rem;
+            text-transform: uppercase;
+            letter-spacing: 0.1em;
+        }
 
-function HomeView(){
-  return `
-    <div class="header">
-      <div class="brand">
-        <div class="logo">🐾</div>
-        <div class="title">
-          <h1>Mr. Meowgi's Dojo</h1>
-          <p>Master Stats to Unlock Time!</p>
+        .quiz-card {
+            background: white;
+            border-radius: 2.5rem;
+            box-shadow: 0 25px 50px -12px rgba(0,0,0,0.25);
+            overflow: hidden;
+            border-bottom: 8px solid var(--indigo-50);
+            position: relative;
+        }
+
+        .quiz-header {
+            padding: 2rem;
+            text-align: center;
+        }
+
+        .number-set {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 0.75rem;
+            justify-content: center;
+            margin-bottom: 1.5rem;
+        }
+
+        .number-pill {
+            width: 3.5rem;
+            height: 3.5rem;
+            background: var(--indigo-50);
+            border-radius: 1rem;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 1.5rem;
+            font-weight: 900;
+            color: var(--indigo-800);
+            border: 2px solid var(--indigo-100);
+            animation: springIn 0.5s ease forwards;
+        }
+
+        @keyframes springIn {
+            from { opacity: 0; transform: scale(0); }
+            to { opacity: 1; transform: scale(1); }
+        }
+
+        .question-text {
+            min-height: 4.5rem;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 1.875rem;
+            font-weight: 900;
+            color: var(--indigo-900);
+            white-space: pre-wrap;
+        }
+
+        .options-grid {
+            padding: 2rem;
+            display: grid;
+            grid-template-columns: 1fr;
+            gap: 0.75rem;
+        }
+
+        .option-btn {
+            width: 100%;
+            padding: 1rem 1.5rem;
+            border-radius: 1.25rem;
+            border: 2px solid var(--indigo-100);
+            background: var(--indigo-50);
+            color: var(--indigo-800);
+            font-size: 1.25rem;
+            font-weight: 900;
+            cursor: pointer;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            transition: all 0.2s ease;
+        }
+
+        .option-btn:hover:not(:disabled) {
+            background: var(--indigo-500);
+            color: white;
+            border-color: var(--indigo-500);
+        }
+
+        .option-btn.correct {
+            background: var(--correct-green);
+            border-color: #16a34a;
+            color: white;
+        }
+
+        .option-btn.wrong-shake {
+            animation: shake 0.4s ease;
+            background: #fee2e2;
+            border-color: #f87171;
+        }
+
+        @keyframes shake {
+            0%, 100% { transform: translateX(0); }
+            25% { transform: translateX(-8px); }
+            75% { transform: translateX(8px); }
+        }
+
+        .blackboard {
+            position: absolute;
+            inset: 0;
+            background: #1a1a1a;
+            z-index: 20;
+            display: flex;
+            flex-direction: column;
+            transform: translateY(100%);
+            transition: transform 0.5s cubic-bezier(0.175, 0.885, 0.32, 1.1);
+        }
+
+        .blackboard.active {
+            transform: translateY(0);
+        }
+
+        .blackboard-trim {
+            height: 1rem;
+            background: #4a3728;
+            border-bottom: 1px solid #2a1a0a;
+        }
+
+        .blackboard-header {
+            padding: 1.25rem;
+            font-family: monospace;
+            color: white;
+            border-bottom: 1px solid rgba(255,255,255,0.1);
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .blackboard-content {
+            flex: 1;
+            padding: 1.25rem;
+            overflow-y: auto;
+            color: white;
+            font-family: monospace;
+        }
+
+        .bb-original-problem {
+            background: rgba(255, 255, 255, 0.08);
+            border-radius: 0.75rem;
+            padding: 1rem;
+            margin-bottom: 1.5rem;
+            border: 1px dashed rgba(255, 255, 255, 0.2);
+        }
+
+        .bb-numbers {
+            color: #fde047;
+            font-size: 1.25rem;
+            font-weight: bold;
+            margin-bottom: 0.5rem;
+            letter-spacing: 0.1em;
+        }
+
+        .bb-question {
+            color: white;
+            font-size: 1rem;
+            opacity: 0.9;
+        }
+
+        .correction-intro {
+            font-size: 1.1rem;
+            font-weight: bold;
+            font-style: italic;
+            color: var(--indigo-400);
+            border-left: 4px solid var(--indigo-500);
+            padding: 0.5rem 1rem;
+            background: rgba(255,255,255,0.05);
+            border-radius: 0 0.5rem 0.5rem 0;
+            margin-bottom: 1.5rem;
+            white-space: pre-wrap;
+        }
+
+        .step-block {
+            margin-bottom: 2rem;
+        }
+
+        .step-label {
+            color: #22c55e;
+            font-weight: bold;
+            font-size: 0.75rem;
+            text-transform: uppercase;
+            margin-bottom: 0.75rem;
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+        }
+
+        .step-instruction {
+            font-size: 1rem;
+            margin-bottom: 0.75rem;
+            line-height: 1.6;
+            white-space: pre-wrap;
+        }
+
+        .step-result {
+            background: rgba(255,255,255,0.05);
+            padding: 0.5rem 1rem;
+            border-radius: 0.25rem;
+            color: #fde047;
+            font-weight: 900;
+            font-size: 1.25rem;
+            display: inline-block;
+            min-height: 2.5rem;
+        }
+
+        .blackboard-footer {
+            padding: 1.25rem;
+            background: #1a1a1a;
+            border-top: 1px solid rgba(255,255,255,0.1);
+            display: flex;
+            gap: 0.75rem;
+        }
+
+        .primary-btn {
+            flex: 1;
+            background: #fde047;
+            color: black;
+            padding: 1rem;
+            border-radius: 0.75rem;
+            font-weight: 900;
+            border: none;
+            cursor: pointer;
+            box-shadow: 0 4px 0 #a17800;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 0.5rem;
+        }
+
+        .primary-btn:active {
+            transform: translateY(2px);
+            box-shadow: none;
+        }
+
+        .results-card {
+            background: white;
+            padding: 3rem;
+            border-radius: 3.5rem;
+            box-shadow: 0 25px 50px -12px rgba(0,0,0,0.25);
+            text-align: center;
+        }
+
+        .results-card h2 {
+            font-size: 3rem;
+            font-weight: 900;
+            color: var(--indigo-900);
+            margin-bottom: 1rem;
+        }
+
+        .score-text {
+            font-size: 1.5rem;
+            font-weight: bold;
+            color: var(--indigo-500);
+            margin-bottom: 2rem;
+        }
+
+        .char {
+            opacity: 0;
+            animation: fadeIn 0.05s forwards;
+            display: inline;
+        }
+
+        @keyframes fadeIn {
+            to { opacity: 1; }
+        }
+
+        .bb-mode-box {
+            border: 1px solid rgba(255, 255, 255, 0.4);
+            border-radius: 4px;
+            padding: 2px 6px;
+            margin: 0 4px;
+            display: inline-block;
+            background: rgba(255, 255, 255, 0.05);
+        }
+        .bb-mode-box.winner {
+            border: 2px solid #fde047;
+            background: rgba(253, 224, 71, 0.1);
+            box-shadow: 0 0 10px rgba(253, 224, 71, 0.2);
+        }
+        .bb-range-highlight {
+            border: 2px solid #fde047;
+            padding: 0 4px;
+            border-radius: 4px;
+            color: white;
+            background: rgba(253, 224, 71, 0.1);
+        }
+    </style>
+</head>
+<body>
+
+    <div class="container">
+        <div id="home-view">
+            <header>
+                <div class="header-left">
+                    <div class="logo-box">🐾</div>
+                    <div class="header-text">
+                        <h1>Mr. Meowgi's Dojo</h1>
+                        <p>Master Stats to Unlock Time!</p>
+                    </div>
+                </div>
+                <div class="stats-badge">
+                    <span>🕒</span>
+                    <span id="unlocked-minutes">0m</span>
+                </div>
+            </header>
+            <div class="topics-grid">
+                <div class="topic-card" onclick="startQuiz('Mean')"><h3>Mean</h3></div>
+                <div class="topic-card" onclick="startQuiz('Median')"><h3>Median</h3></div>
+                <div class="topic-card" onclick="startQuiz('Mode')"><h3>Mode</h3></div>
+                <div class="topic-card" onclick="startQuiz('Range')"><h3>Range</h3></div>
+                <div class="topic-card" onclick="startQuiz('Random')"><h3>Random</h3></div>
+            </div>
         </div>
-      </div>
-      <div class="minutes">⏱️ <span>${Math.floor(unlockedMinutes)}m</span></div>
-    </div>
 
-    <div class="grid">
-      ${TOPICS.map(t => `
-        <button class="topic" data-topic="${t}">${t}</button>
-      `).join("")}
-    </div>
-  `;
-}
+        <div id="quiz-view" class="hidden">
+            <div id="progress-container" class="progress-container"></div>
+            <div class="quiz-nav">
+                <button class="exit-btn" onclick="showHome()">🏠 Exit</button>
+                <div id="q-counter" class="q-counter">1 / 10</div>
+            </div>
 
-function QuizView(){
-  const q = quiz.questions[quiz.currentIndex];
-  const progress = (quiz.currentIndex / 10) * 100;
+            <div class="quiz-card">
+                <div class="quiz-header">
+                    <div id="number-set" class="number-set"></div>
+                    <div id="question-text" class="question-text"></div>
+                </div>
+                <div id="options-grid" class="options-grid"></div>
 
-  return `
-    <div class="progress"><div class="bar" style="width:${progress}%;"></div></div>
-
-    <div class="topbar">
-      <button class="exit" id="btnExit">🏠 Exit</button>
-      <div class="counter">${quiz.currentIndex+1} / 10</div>
-    </div>
-
-    <div class="card">
-      <div class="cardTop">
-        <div class="nums">
-          ${q.data.map(n => `<div class="num">${n}</div>`).join("")}
+                <div id="blackboard" class="blackboard">
+                    <div class="blackboard-trim"></div>
+                    <div class="blackboard-header">
+                        <div style="display:flex; align-items:center; gap:0.5rem">
+                            <span>🐾</span>
+                            <span style="font-size:10px; font-weight:bold; color:#fde047; text-transform:uppercase">Dojo Correction</span>
+                        </div>
+                        <div style="font-size:10px; font-weight:bold; color:#f87171; text-transform:uppercase">❌ Incorrect</div>
+                    </div>
+                    <div id="blackboard-content" class="blackboard-content"></div>
+                    <div class="blackboard-footer">
+                        <button class="primary-btn" onclick="nextQuestion()">Next Question ➡️</button>
+                    </div>
+                </div>
+            </div>
         </div>
-        <h2 class="question">${q.questionText}</h2>
-        <p style="margin:10px 0 0; color:var(--muted); font-weight:900;">
-          Topic: <span style="color:var(--brand);">${q.topic}</span> • Score: ${quiz.score}
-        </p>
-      </div>
 
-      <div class="options">
-        ${q.options.map(opt => {
-          let cls = "opt";
-          if(feedback === "CORRECT" && opt === q.correctAnswer) cls += " correct";
-          if(feedback === "WRONG" && opt === q.correctAnswer) cls += " correct";
-          return `<button class="${cls}" data-opt="${opt}" ${feedback !== "NONE" ? "disabled" : ""}>
-            <span>${opt}</span>
-            <span style="opacity:.35;">›</span>
-          </button>`;
-        }).join("")}
-      </div>
+        <div id="results-view" class="hidden">
+            <div class="results-card">
+                <h2>Training Done!</h2>
+                <div id="final-score" class="score-text">Score: 0 / 10</div>
+                <button class="primary-btn" style="width: 100%; padding: 1.25rem; font-size: 1.25rem;" onclick="showHome()">Back to Dojo</button>
+            </div>
+        </div>
     </div>
-  `;
-}
 
-function ResultsView(){
-  return `
-    <div class="results">
-      <div class="resultsCard">
-        <h2>Training Done!</h2>
-        <p>Score: ${quiz ? quiz.score : 0} / 10</p>
-        <button class="btnPrimary" id="btnHome">Back to Dojo</button>
-      </div>
-    </div>
-  `;
-}
+    <script>
+        let currentQuiz = null;
+        let userStats = { unlockedMinutes: 0 };
+        let isProcessing = false;
 
-function render(){
-  if(view === "Home"){
-    app.innerHTML = HomeView();
-    app.querySelectorAll(".topic").forEach(btn=>{
-      btn.addEventListener("click", () => startQuiz(btn.dataset.topic));
-    });
-    return;
-  }
+        const TYPE_SPEED = 50; 
+        const STEP_DELAY = 600;
 
-  if(view === "Quiz"){
-    app.innerHTML = QuizView();
-    const exit = document.getElementById("btnExit");
-    exit.addEventListener("click", () => { hideOverlay(); setView("Home"); });
+        function shuffle(array) {
+            let currentIndex = array.length,  randomIndex;
+            while (currentIndex != 0) {
+                randomIndex = Math.floor(Math.random() * currentIndex);
+                currentIndex--;
+                [array[currentIndex], array[randomIndex]] = [array[randomIndex], array[currentIndex]];
+            }
+            return array;
+        }
 
-    app.querySelectorAll(".opt").forEach(btn=>{
-      btn.addEventListener("click", () => handleAnswer(btn.dataset.opt));
-    });
-    return;
-  }
+        function generateData(count, min, max) {
+            return Array.from({ length: count }, () => Math.floor(Math.random() * (max - min + 1)) + min);
+        }
 
-  if(view === "Results"){
-    app.innerHTML = ResultsView();
-    document.getElementById("btnHome").addEventListener("click", () => setView("Home"));
-  }
-}
+        function generateQuestion(topic) {
+            const dataSize = Math.floor(Math.random() * 3) + 4;
+            let rawData = generateData(dataSize, 2, 12);
+            let questionText = "";
+            let correctAnswer = "";
+            let steps = [];
 
-render();
-</script>
+            if (topic === 'Random') {
+                const topics = ['Mean', 'Median', 'Mode', 'Range'];
+                topic = topics[Math.floor(Math.random() * topics.length)];
+            }
+
+            switch (topic) {
+                case 'Mean':
+                    const sum = rawData.reduce((a, b) => a + b, 0);
+                    const cleanSum = Math.round(sum / rawData.length) * rawData.length;
+                    if (sum !== cleanSum) rawData[0] += (cleanSum - sum);
+                    const finalMean = cleanSum / rawData.length;
+                    questionText = `What is the mean?`;
+                    correctAnswer = finalMean.toString();
+                    steps = [
+                        { label: 'Step 1', instruction: `Step 1: Add them all together: ${rawData.join(' + ')}`, expected: `= ${cleanSum}` },
+                        { label: 'Step 2', instruction: `Step 2: Divide the total by the count of numbers (${rawData.length}): ${cleanSum} ÷ ${rawData.length}`, expected: `= ${correctAnswer}` }
+                    ];
+                    break;
+
+                case 'Median':
+                    const sortedMed = [...rawData].sort((a, b) => a - b);
+                    const isEvenMed = rawData.length % 2 === 0;
+                    const midMed = Math.floor(rawData.length / 2);
+                    const medianValue = !isEvenMed ? sortedMed[midMed] : (sortedMed[midMed - 1] + sortedMed[midMed]) / 2;
+                    questionText = "Find the median.";
+                    correctAnswer = medianValue.toString();
+                    steps = [
+                        { label: 'Step 1', instruction: "Step 1: Order smallest to largest.", expected: `= ${sortedMed.join(', ')}` },
+                        { label: 'Step 2', instruction: "Step 2: Check if the count of numbers is even or odd.", expected: `Count is ${rawData.length} (${isEvenMed ? "Even" : "Odd"})` },
+                        { 
+                            label: 'Step 3', 
+                            instruction: isEvenMed 
+                                ? `Step 3: Since the count is even, take the middle two numbers and find their average: (${sortedMed[midMed-1]} + ${sortedMed[midMed]}) ÷ 2` 
+                                : `Step 3: Since the count is odd, pick the single middle number.`, 
+                            expected: `= ${correctAnswer}` 
+                        }
+                    ];
+                    break;
+
+                case 'Mode':
+                    // Force a mode
+                    const modeVal = Math.floor(Math.random() * 8) + 2;
+                    rawData[0] = modeVal;
+                    rawData[1] = modeVal;
+                    // Ensure it's the winner
+                    rawData = rawData.map((n, i) => (i > 1 && n === modeVal) ? n + 1 : n);
+                    
+                    const counts = {};
+                    rawData.forEach(n => counts[n] = (counts[n] || 0) + 1);
+                    const finalMode = Object.keys(counts).reduce((a, b) => counts[a] > counts[b] ? a : b);
+                    
+                    questionText = "What is the mode?";
+                    correctAnswer = finalMode;
+
+                    const sortedMode = [...rawData].sort((a, b) => a - b);
+                    const groups = [];
+                    let currentGroup = [];
+                    sortedMode.forEach((n, i) => {
+                        if (i === 0 || n === sortedMode[i-1]) {
+                            currentGroup.push(n);
+                        } else {
+                            groups.push(currentGroup);
+                            currentGroup = [n];
+                        }
+                    });
+                    groups.push(currentGroup);
+
+                    const visualGroups = groups.map(g => {
+                        const isMode = g[0].toString() === finalMode.toString();
+                        return `<span class="bb-mode-box ${isMode ? 'winner' : ''}">${g.join(', ')}</span>`;
+                    }).join(' ');
+
+                    steps = [
+                        { label: 'Step 1', instruction: "Step 1: Sort and group the same numbers together.", expected: visualGroups },
+                        { label: 'Step 2', instruction: "Step 2: Find the group with the most numbers.", expected: `= ${finalMode}` }
+                    ];
+                    break;
+
+                case 'Range':
+                    const maxVal = Math.max(...rawData);
+                    const minVal = Math.min(...rawData);
+                    const rangeVal = maxVal - minVal;
+                    const sortedRange = [...rawData].sort((a, b) => a - b);
+                    
+                    const visualRangeOrder = sortedRange.map((n, i) => {
+                        if (i === 0 || i === sortedRange.length - 1) {
+                            return `<span class="bb-range-highlight">${n}</span>`;
+                        }
+                        return n;
+                    }).join(', ');
+
+                    questionText = "What is the range?";
+                    correctAnswer = rangeVal.toString();
+                    steps = [
+                        { label: 'Step 1', instruction: "Step 1: Order from smallest to largest and find the Max and Min.", expected: visualRangeOrder },
+                        { label: 'Step 2', instruction: `Step 2: Subtract Min from Max: ${maxVal} - ${minVal}`, expected: `= ${rangeVal}` }
+                    ];
+                    break;
+            }
+
+            const displayData = shuffle([...rawData]);
+            const options = new Set([correctAnswer]);
+            while (options.size < 4) {
+                const off = Math.floor(Math.random() * 5) + 1;
+                const val = (parseFloat(correctAnswer) + (Math.random() > 0.5 ? off : -off)).toString();
+                if (val !== "0" && val !== correctAnswer) options.add(val);
+            }
+
+            return { 
+                data: displayData, 
+                questionText, 
+                correctAnswer, 
+                steps, 
+                options: Array.from(options).sort(() => Math.random() - 0.5) 
+            };
+        }
+
+        function typeText(element, text, delay = 0, speed = TYPE_SPEED) {
+            element.innerHTML = '';
+            if (text.includes('<')) {
+                return new Promise(resolve => {
+                    setTimeout(() => {
+                        element.innerHTML = text;
+                        resolve();
+                    }, delay);
+                });
+            }
+
+            return new Promise(resolve => {
+                setTimeout(() => {
+                    let i = 0;
+                    function tick() {
+                        if (i < text.length) {
+                            const span = document.createElement('span');
+                            span.className = 'char';
+                            span.textContent = text[i];
+                            element.appendChild(span);
+                            i++;
+                            setTimeout(tick, speed);
+                        } else {
+                            setTimeout(resolve, 100);
+                        }
+                    }
+                    tick();
+                }, delay);
+            });
+        }
+
+        function showHome() {
+            document.getElementById('home-view').classList.remove('hidden');
+            document.getElementById('quiz-view').classList.add('hidden');
+            document.getElementById('results-view').classList.add('hidden');
+        }
+
+        function initProgressBar() {
+            const container = document.getElementById('progress-container');
+            container.innerHTML = '';
+            for (let i = 0; i < 10; i++) {
+                const seg = document.createElement('div');
+                seg.className = 'progress-segment';
+                seg.id = `seg-${i}`;
+                container.appendChild(seg);
+            }
+        }
+
+        function updateProgressBar(index, status) {
+            const segments = document.querySelectorAll('.progress-segment');
+            segments.forEach(s => s.classList.remove('current'));
+            
+            const seg = document.getElementById(`seg-${index}`);
+            if (seg) {
+                if (status === 'correct') seg.classList.add('correct');
+                else if (status === 'wrong') seg.classList.add('wrong');
+                else seg.classList.add('current');
+            }
+        }
+
+        function startQuiz(topic) {
+            const questions = Array.from({ length: 10 }, () => generateQuestion(topic));
+            currentQuiz = { questions, currentIndex: 0, score: 0, results: [] };
+            document.getElementById('home-view').classList.add('hidden');
+            document.getElementById('quiz-view').classList.remove('hidden');
+            initProgressBar();
+            renderQuestion();
+        }
+
+        function renderQuestion() {
+            const q = currentQuiz.questions[currentQuiz.currentIndex];
+            isProcessing = false;
+            
+            updateProgressBar(currentQuiz.currentIndex, 'current');
+            document.getElementById('q-counter').textContent = `${currentQuiz.currentIndex + 1} / 10`;
+            document.getElementById('blackboard').classList.remove('active');
+            
+            const numSet = document.getElementById('number-set');
+            numSet.innerHTML = '';
+            q.data.forEach((n, i) => {
+                const pill = document.createElement('div');
+                pill.className = 'number-pill';
+                pill.textContent = n;
+                pill.style.animationDelay = `${i * 0.1}s`;
+                numSet.appendChild(pill);
+            });
+
+            typeText(document.getElementById('question-text'), q.questionText, 300, 40);
+
+            const grid = document.getElementById('options-grid');
+            grid.innerHTML = '';
+            q.options.forEach(opt => {
+                const btn = document.createElement('button');
+                btn.className = 'option-btn';
+                btn.innerHTML = `<span>${opt}</span>`;
+                btn.onclick = () => handleAnswer(opt, btn);
+                grid.appendChild(btn);
+            });
+        }
+
+        function handleAnswer(selected, btn) {
+            if (isProcessing) return;
+            isProcessing = true;
+            const q = currentQuiz.questions[currentQuiz.currentIndex];
+            const isCorrect = selected === q.correctAnswer;
+
+            if (isCorrect) {
+                btn.classList.add('correct');
+                currentQuiz.score++;
+                currentQuiz.results.push(true);
+                updateProgressBar(currentQuiz.currentIndex, 'correct');
+                confetti({ particleCount: 80, spread: 70, origin: { y: 0.6 } });
+                setTimeout(nextQuestion, 1200);
+            } else {
+                btn.classList.add('wrong-shake');
+                currentQuiz.results.push(false);
+                updateProgressBar(currentQuiz.currentIndex, 'wrong');
+                setTimeout(() => showBlackboard(), 600);
+            }
+        }
+
+        async function showBlackboard() {
+            const q = currentQuiz.questions[currentQuiz.currentIndex];
+            const board = document.getElementById('blackboard');
+            const content = document.getElementById('blackboard-content');
+            content.innerHTML = '';
+            board.classList.add('active');
+
+            const problemBox = document.createElement('div');
+            problemBox.className = 'bb-original-problem';
+            problemBox.innerHTML = `
+                <div class="bb-numbers">${q.data.join(', ')}</div>
+                <div class="bb-question">${q.questionText}</div>
+            `;
+            content.appendChild(problemBox);
+
+            const intro = document.createElement('div');
+            intro.className = 'correction-intro';
+            content.appendChild(intro);
+            await typeText(intro, "Let's review the dojo steps...", 100, 35);
+
+            for (let i = 0; i < q.steps.length; i++) {
+                const step = q.steps[i];
+                const block = document.createElement('div');
+                block.className = 'step-block';
+                
+                block.innerHTML = `
+                    <div class="step-label">${step.label}</div>
+                    <div class="step-instruction" id="step-inst-${i}"></div>
+                    <div class="step-result" id="step-res-${i}"></div>
+                `;
+                content.appendChild(block);
+                content.scrollTop = content.scrollHeight;
+
+                await new Promise(r => setTimeout(r, STEP_DELAY));
+                await typeText(document.getElementById(`step-inst-${i}`), step.instruction, 0, TYPE_SPEED);
+                await new Promise(r => setTimeout(r, 400));
+                await typeText(document.getElementById(`step-res-${i}`), step.expected, 0, TYPE_SPEED + 10);
+                
+                content.scrollTop = content.scrollHeight;
+            }
+        }
+
+        function nextQuestion() {
+            currentQuiz.currentIndex++;
+            if (currentQuiz.currentIndex >= 10) {
+                showResults();
+            } else {
+                renderQuestion();
+            }
+        }
+
+        function showResults() {
+            document.getElementById('quiz-view').classList.add('hidden');
+            document.getElementById('results-view').classList.remove('hidden');
+            document.getElementById('final-score').textContent = `Score: ${currentQuiz.score} / 10`;
+            userStats.unlockedMinutes += (currentQuiz.score * 2);
+            document.getElementById('unlocked-minutes').textContent = `${userStats.unlockedMinutes}m`;
+        }
+    </script>
 </body>
 </html>
