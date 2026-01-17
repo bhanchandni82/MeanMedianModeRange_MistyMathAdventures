@@ -1,863 +1,1303 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Mr. Meowgi's Stats Dojo</title>
-    <!-- External Confetti Library -->
-    <script src="https://cdn.jsdelivr.net/npm/canvas-confetti@1.6.0/dist/confetti.browser.min.js"></script>
-    <style>
-        :root {
-            --indigo-50: #f8fafc;
-            --indigo-100: #e2e8f0;
-            --indigo-400: #818cf8;
-            --indigo-500: #6366f1;
-            --indigo-600: #4f46e5;
-            --indigo-700: #4338ca;
-            --indigo-800: #3730a3;
-            --indigo-900: #312e81;
-            --bg-slate: #f1f5f9;
-            --correct-green: #22c55e;
-            --wrong-pink: #f472b6;
-        }
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Mr. Meowgi's Stats Dojo</title>
+  <script src="https://cdn.jsdelivr.net/npm/canvas-confetti@1.6.0/dist/confetti.browser.min.js"></script>
 
-        * {
-            box-sizing: border-box;
-            margin: 0;
-            padding: 0;
-            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
-        }
+  <style>
+    :root {
+      --indigo-50: #f8fafc;
+      --indigo-100: #e2e8f0;
+      --indigo-400: #818cf8;
+      --indigo-500: #6366f1;
+      --indigo-600: #4f46e5;
+      --indigo-700: #4338ca;
+      --indigo-800: #3730a3;
+      --indigo-900: #312e81;
+      --bg-slate: #f1f5f9;
+      --correct-green: #22c55e;
+      --wrong-pink: #f472b6;
+    }
 
-        body {
-            background-color: var(--bg-slate);
-            min-height: 100vh;
-            padding: 2rem 1rem;
-            overflow-x: hidden;
-        }
+    * { box-sizing: border-box; margin: 0; padding: 0; font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; }
+    body { background-color: var(--bg-slate); min-height: 100vh; padding: 2rem 1rem; overflow-x: hidden; }
+    .container { max-width: 896px; margin: 0 auto; }
+    .hidden { display: none !important; }
 
-        .container {
-            max-width: 896px;
-            margin: 0 auto;
-        }
+    header {
+      display: flex; justify-content: space-between; align-items: center;
+      background: white; padding: 1.5rem; border-radius: 1.5rem;
+      box-shadow: 0 1px 3px rgba(0,0,0,0.1);
+      border-bottom: 4px solid var(--indigo-100);
+      margin-bottom: 2rem;
+    }
+    .header-left { display: flex; align-items: center; gap: 1rem; }
+    .logo-box {
+      font-size: 2.5rem; background: var(--indigo-500);
+      width: 4rem; height: 4rem; border-radius: 1rem;
+      display: flex; align-items: center; justify-content: center;
+    }
+    .header-text h1 { font-size: 1.875rem; font-weight: 900; color: var(--indigo-900); line-height: 1.2; }
+    .header-text p { color: var(--indigo-400); font-weight: bold; }
 
-        .hidden { display: none !important; }
+    .stats-badge {
+      background: var(--indigo-900); color: white;
+      padding: 0.5rem 1.5rem; border-radius: 1rem;
+      display: flex; align-items: center; gap: 0.5rem;
+      font-weight: bold; font-size: 1.25rem;
+    }
 
-        header {
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            background: white;
-            padding: 1.5rem;
-            border-radius: 1.5rem;
-            box-shadow: 0 1px 3px rgba(0,0,0,0.1);
-            border-bottom: 4px solid var(--indigo-100);
-            margin-bottom: 2rem;
-        }
+    .topics-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 1.5rem; }
 
-        .header-left {
-            display: flex;
-            align-items: center;
-            gap: 1rem;
-        }
+    .topic-card {
+      background: white; padding: 2.5rem; border-radius: 1.5rem;
+      border: 2px solid transparent;
+      box-shadow: 0 4px 6px rgba(0,0,0,0.05);
+      cursor: pointer; transition: all 0.2s ease;
+      text-align: center;
+    }
+    .topic-card:hover { border-color: var(--indigo-400); transform: translateY(-2px); }
+    .topic-card h3 { font-size: 1.875rem; font-weight: 900; color: var(--indigo-900); }
+    .topic-card p { margin-top: 0.5rem; color: var(--indigo-400); font-weight: 800; font-size: 0.9rem; }
 
-        .logo-box {
-            font-size: 2.5rem;
-            background: var(--indigo-500);
-            width: 4rem;
-            height: 4rem;
-            border-radius: 1rem;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-        }
+    .progress-container { width: 100%; height: 0.75rem; display: flex; gap: 0.5rem; margin-bottom: 1.5rem; }
+    .progress-segment { flex: 1; background: var(--indigo-100); border-radius: 999px; transition: background-color 0.4s ease, transform 0.2s ease; }
+    .progress-segment.current { background: var(--indigo-400); transform: scaleY(1.2); }
+    .progress-segment.correct { background: var(--correct-green); }
+    .progress-segment.wrong { background: var(--wrong-pink); }
 
-        .header-text h1 {
-            font-size: 1.875rem;
-            font-weight: 900;
-            color: var(--indigo-900);
-            line-height: 1.2;
-        }
+    .quiz-nav { display: flex; justify-content: space-between; align-items: center; margin-bottom: 1rem; }
+    .exit-btn { background: none; border: none; color: var(--indigo-400); font-weight: bold; display: flex; align-items: center; gap: 0.25rem; cursor: pointer; }
+    .q-counter { color: var(--indigo-800); font-weight: 900; font-size: 0.75rem; text-transform: uppercase; letter-spacing: 0.1em; }
 
-        .header-text p {
-            color: var(--indigo-400);
-            font-weight: bold;
-        }
+    .quiz-card {
+      background: white; border-radius: 2.5rem;
+      box-shadow: 0 25px 50px -12px rgba(0,0,0,0.25);
+      overflow: hidden; border-bottom: 8px solid var(--indigo-50);
+      position: relative;
+    }
 
-        .stats-badge {
-            background: var(--indigo-900);
-            color: white;
-            padding: 0.5rem 1.5rem;
-            border-radius: 1rem;
-            display: flex;
-            align-items: center;
-            gap: 0.5rem;
-            font-weight: bold;
-            font-size: 1.25rem;
-        }
+    .quiz-header { padding: 2rem; text-align: center; }
+    .number-set { display: flex; flex-wrap: wrap; gap: 0.75rem; justify-content: center; margin-bottom: 1.5rem; }
+    .number-pill {
+      width: 3.5rem; height: 3.5rem;
+      background: var(--indigo-50); border-radius: 1rem;
+      display: flex; align-items: center; justify-content: center;
+      font-size: 1.5rem; font-weight: 900; color: var(--indigo-800);
+      border: 2px solid var(--indigo-100);
+      animation: springIn 0.5s ease forwards;
+    }
+    .number-pill.unknown { background: #fff7ed; border-color: #fdba74; color: #9a3412; }
+    @keyframes springIn { from { opacity: 0; transform: scale(0); } to { opacity: 1; transform: scale(1); } }
 
-        .topics-grid {
-            display: grid;
-            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
-            gap: 1.5rem;
-        }
+    .question-text {
+      min-height: 4.5rem; display: flex; align-items: center; justify-content: center;
+      font-size: 1.55rem; font-weight: 900; color: var(--indigo-900);
+      white-space: pre-wrap;
+    }
 
-        .topic-card {
-            background: white;
-            padding: 2.5rem;
-            border-radius: 1.5rem;
-            border: 2px solid transparent;
-            box-shadow: 0 4px 6px rgba(0,0,0,0.05);
-            cursor: pointer;
-            transition: all 0.2s ease;
-            text-align: center;
-        }
+    .options-grid { padding: 2rem; display: grid; grid-template-columns: 1fr; gap: 0.75rem; }
+    .option-btn {
+      width: 100%; padding: 1rem 1.5rem; border-radius: 1.25rem;
+      border: 2px solid var(--indigo-100);
+      background: var(--indigo-50); color: var(--indigo-800);
+      font-size: 1.25rem; font-weight: 900;
+      cursor: pointer; display: flex; justify-content: space-between; align-items: center;
+      transition: all 0.2s ease;
+    }
+    .option-btn:hover:not(:disabled) { background: var(--indigo-500); color: white; border-color: var(--indigo-500); }
+    .option-btn.correct { background: var(--correct-green); border-color: #16a34a; color: white; }
+    .option-btn.wrong-shake { animation: shake 0.4s ease; background: #fee2e2; border-color: #f87171; }
+    @keyframes shake { 0%,100%{transform:translateX(0)} 25%{transform:translateX(-8px)} 75%{transform:translateX(8px)} }
 
-        .topic-card:hover {
-            border-color: var(--indigo-400);
-            transform: translateY(-2px);
-        }
+    .blackboard {
+      position: absolute; inset: 0; background: #1a1a1a; z-index: 20;
+      display: flex; flex-direction: column;
+      transform: translateY(100%);
+      transition: transform 0.5s cubic-bezier(0.175, 0.885, 0.32, 1.1);
+    }
+    .blackboard.active { transform: translateY(0); }
+    .blackboard-trim { height: 1rem; background: #4a3728; border-bottom: 1px solid #2a1a0a; }
+    .blackboard-header {
+      padding: 1.25rem; font-family: monospace; color: white;
+      border-bottom: 1px solid rgba(255,255,255,0.1);
+      display: flex; justify-content: space-between; align-items: center;
+    }
+    .blackboard-content { flex: 1; padding: 1.25rem; overflow-y: auto; color: white; font-family: monospace; }
+    .bb-original-problem {
+      background: rgba(255,255,255,0.08); border-radius: 0.75rem;
+      padding: 1rem; margin-bottom: 1.25rem;
+      border: 1px dashed rgba(255,255,255,0.2);
+    }
+    .bb-numbers { color: #fde047; font-size: 1.1rem; font-weight: bold; margin-bottom: 0.5rem; letter-spacing: 0.06em; }
+    .bb-question { color: white; font-size: 0.95rem; opacity: 0.9; white-space: pre-wrap; }
+    .bb-meta { margin-top: 0.5rem; font-size: 0.8rem; opacity: 0.75; }
 
-        .topic-card h3 {
-            font-size: 1.875rem;
-            font-weight: 900;
-            color: var(--indigo-900);
-        }
+    .correction-intro {
+      font-size: 1.05rem; font-weight: bold; font-style: italic;
+      color: var(--indigo-400);
+      border-left: 4px solid var(--indigo-500);
+      padding: 0.5rem 1rem;
+      background: rgba(255,255,255,0.05);
+      border-radius: 0 0.5rem 0.5rem 0;
+      margin-bottom: 1.25rem;
+      white-space: pre-wrap;
+    }
 
-        .progress-container {
-            width: 100%;
-            height: 0.75rem;
-            display: flex;
-            gap: 0.5rem;
-            margin-bottom: 1.5rem;
-        }
+    .step-block { margin-bottom: 1.6rem; }
+    .step-label {
+      color: #22c55e; font-weight: bold; font-size: 0.75rem;
+      text-transform: uppercase; margin-bottom: 0.6rem;
+      display: flex; align-items: center; gap: 0.5rem;
+    }
+    .step-instruction { font-size: 1rem; margin-bottom: 0.6rem; line-height: 1.6; white-space: pre-wrap; }
+    .step-result {
+      background: rgba(255,255,255,0.05);
+      padding: 0.5rem 0.9rem;
+      border-radius: 0.25rem;
+      color: #fde047; font-weight: 900; font-size: 1.1rem;
+      display: inline-block; min-height: 2.3rem;
+    }
 
-        .progress-segment {
-            flex: 1;
-            background: var(--indigo-100);
-            border-radius: 999px;
-            transition: background-color 0.4s ease, transform 0.2s ease;
-        }
+    .blackboard-footer {
+      padding: 1.25rem; background: #1a1a1a;
+      border-top: 1px solid rgba(255,255,255,0.1);
+      display: flex; gap: 0.75rem;
+    }
+    .primary-btn {
+      flex: 1; background: #fde047; color: black;
+      padding: 1rem; border-radius: 0.75rem;
+      font-weight: 900; border: none; cursor: pointer;
+      box-shadow: 0 4px 0 #a17800;
+      display: flex; align-items: center; justify-content: center; gap: 0.5rem;
+    }
+    .primary-btn:active { transform: translateY(2px); box-shadow: none; }
 
-        .progress-segment.current {
-            background: var(--indigo-400);
-            transform: scaleY(1.2);
-        }
+    .results-card {
+      background: white; padding: 3rem;
+      border-radius: 3.5rem;
+      box-shadow: 0 25px 50px -12px rgba(0,0,0,0.25);
+      text-align: center;
+    }
+    .results-card h2 { font-size: 3rem; font-weight: 900; color: var(--indigo-900); margin-bottom: 1rem; }
+    .score-text { font-size: 1.5rem; font-weight: bold; color: var(--indigo-500); margin-bottom: 2rem; }
 
-        .progress-segment.correct {
-            background: var(--correct-green);
-        }
+    .char { opacity: 0; animation: fadeIn 0.05s forwards; display: inline; }
+    @keyframes fadeIn { to { opacity: 1; } }
 
-        .progress-segment.wrong {
-            background: var(--wrong-pink);
-        }
-
-        .quiz-nav {
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            margin-bottom: 1rem;
-        }
-
-        .exit-btn {
-            background: none;
-            border: none;
-            color: var(--indigo-400);
-            font-weight: bold;
-            display: flex;
-            align-items: center;
-            gap: 0.25rem;
-            cursor: pointer;
-        }
-
-        .q-counter {
-            color: var(--indigo-800);
-            font-weight: 900;
-            font-size: 0.75rem;
-            text-transform: uppercase;
-            letter-spacing: 0.1em;
-        }
-
-        .quiz-card {
-            background: white;
-            border-radius: 2.5rem;
-            box-shadow: 0 25px 50px -12px rgba(0,0,0,0.25);
-            overflow: hidden;
-            border-bottom: 8px solid var(--indigo-50);
-            position: relative;
-        }
-
-        .quiz-header {
-            padding: 2rem;
-            text-align: center;
-        }
-
-        .number-set {
-            display: flex;
-            flex-wrap: wrap;
-            gap: 0.75rem;
-            justify-content: center;
-            margin-bottom: 1.5rem;
-        }
-
-        .number-pill {
-            width: 3.5rem;
-            height: 3.5rem;
-            background: var(--indigo-50);
-            border-radius: 1rem;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            font-size: 1.5rem;
-            font-weight: 900;
-            color: var(--indigo-800);
-            border: 2px solid var(--indigo-100);
-            animation: springIn 0.5s ease forwards;
-        }
-
-        @keyframes springIn {
-            from { opacity: 0; transform: scale(0); }
-            to { opacity: 1; transform: scale(1); }
-        }
-
-        .question-text {
-            min-height: 4.5rem;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            font-size: 1.875rem;
-            font-weight: 900;
-            color: var(--indigo-900);
-            white-space: pre-wrap;
-        }
-
-        .options-grid {
-            padding: 2rem;
-            display: grid;
-            grid-template-columns: 1fr;
-            gap: 0.75rem;
-        }
-
-        .option-btn {
-            width: 100%;
-            padding: 1rem 1.5rem;
-            border-radius: 1.25rem;
-            border: 2px solid var(--indigo-100);
-            background: var(--indigo-50);
-            color: var(--indigo-800);
-            font-size: 1.25rem;
-            font-weight: 900;
-            cursor: pointer;
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            transition: all 0.2s ease;
-        }
-
-        .option-btn:hover:not(:disabled) {
-            background: var(--indigo-500);
-            color: white;
-            border-color: var(--indigo-500);
-        }
-
-        .option-btn.correct {
-            background: var(--correct-green);
-            border-color: #16a34a;
-            color: white;
-        }
-
-        .option-btn.wrong-shake {
-            animation: shake 0.4s ease;
-            background: #fee2e2;
-            border-color: #f87171;
-        }
-
-        @keyframes shake {
-            0%, 100% { transform: translateX(0); }
-            25% { transform: translateX(-8px); }
-            75% { transform: translateX(8px); }
-        }
-
-        .blackboard {
-            position: absolute;
-            inset: 0;
-            background: #1a1a1a;
-            z-index: 20;
-            display: flex;
-            flex-direction: column;
-            transform: translateY(100%);
-            transition: transform 0.5s cubic-bezier(0.175, 0.885, 0.32, 1.1);
-        }
-
-        .blackboard.active {
-            transform: translateY(0);
-        }
-
-        .blackboard-trim {
-            height: 1rem;
-            background: #4a3728;
-            border-bottom: 1px solid #2a1a0a;
-        }
-
-        .blackboard-header {
-            padding: 1.25rem;
-            font-family: monospace;
-            color: white;
-            border-bottom: 1px solid rgba(255,255,255,0.1);
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-        }
-
-        .blackboard-content {
-            flex: 1;
-            padding: 1.25rem;
-            overflow-y: auto;
-            color: white;
-            font-family: monospace;
-        }
-
-        .bb-original-problem {
-            background: rgba(255, 255, 255, 0.08);
-            border-radius: 0.75rem;
-            padding: 1rem;
-            margin-bottom: 1.5rem;
-            border: 1px dashed rgba(255, 255, 255, 0.2);
-        }
-
-        .bb-numbers {
-            color: #fde047;
-            font-size: 1.25rem;
-            font-weight: bold;
-            margin-bottom: 0.5rem;
-            letter-spacing: 0.1em;
-        }
-
-        .bb-question {
-            color: white;
-            font-size: 1rem;
-            opacity: 0.9;
-        }
-
-        .correction-intro {
-            font-size: 1.1rem;
-            font-weight: bold;
-            font-style: italic;
-            color: var(--indigo-400);
-            border-left: 4px solid var(--indigo-500);
-            padding: 0.5rem 1rem;
-            background: rgba(255,255,255,0.05);
-            border-radius: 0 0.5rem 0.5rem 0;
-            margin-bottom: 1.5rem;
-            white-space: pre-wrap;
-        }
-
-        .step-block {
-            margin-bottom: 2rem;
-        }
-
-        .step-label {
-            color: #22c55e;
-            font-weight: bold;
-            font-size: 0.75rem;
-            text-transform: uppercase;
-            margin-bottom: 0.75rem;
-            display: flex;
-            align-items: center;
-            gap: 0.5rem;
-        }
-
-        .step-instruction {
-            font-size: 1rem;
-            margin-bottom: 0.75rem;
-            line-height: 1.6;
-            white-space: pre-wrap;
-        }
-
-        .step-result {
-            background: rgba(255,255,255,0.05);
-            padding: 0.5rem 1rem;
-            border-radius: 0.25rem;
-            color: #fde047;
-            font-weight: 900;
-            font-size: 1.25rem;
-            display: inline-block;
-            min-height: 2.5rem;
-        }
-
-        .blackboard-footer {
-            padding: 1.25rem;
-            background: #1a1a1a;
-            border-top: 1px solid rgba(255,255,255,0.1);
-            display: flex;
-            gap: 0.75rem;
-        }
-
-        .primary-btn {
-            flex: 1;
-            background: #fde047;
-            color: black;
-            padding: 1rem;
-            border-radius: 0.75rem;
-            font-weight: 900;
-            border: none;
-            cursor: pointer;
-            box-shadow: 0 4px 0 #a17800;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            gap: 0.5rem;
-        }
-
-        .primary-btn:active {
-            transform: translateY(2px);
-            box-shadow: none;
-        }
-
-        .results-card {
-            background: white;
-            padding: 3rem;
-            border-radius: 3.5rem;
-            box-shadow: 0 25px 50px -12px rgba(0,0,0,0.25);
-            text-align: center;
-        }
-
-        .results-card h2 {
-            font-size: 3rem;
-            font-weight: 900;
-            color: var(--indigo-900);
-            margin-bottom: 1rem;
-        }
-
-        .score-text {
-            font-size: 1.5rem;
-            font-weight: bold;
-            color: var(--indigo-500);
-            margin-bottom: 2rem;
-        }
-
-        .char {
-            opacity: 0;
-            animation: fadeIn 0.05s forwards;
-            display: inline;
-        }
-
-        @keyframes fadeIn {
-            to { opacity: 1; }
-        }
-
-        .bb-mode-box {
-            border: 1px solid rgba(255, 255, 255, 0.4);
-            border-radius: 4px;
-            padding: 2px 6px;
-            margin: 0 4px;
-            display: inline-block;
-            background: rgba(255, 255, 255, 0.05);
-        }
-        .bb-mode-box.winner {
-            border: 2px solid #fde047;
-            background: rgba(253, 224, 71, 0.1);
-            box-shadow: 0 0 10px rgba(253, 224, 71, 0.2);
-        }
-        .bb-range-highlight {
-            border: 2px solid #fde047;
-            padding: 0 4px;
-            border-radius: 4px;
-            color: white;
-            background: rgba(253, 224, 71, 0.1);
-        }
-    </style>
+    .bb-range-highlight {
+      border: 2px solid #fde047;
+      padding: 0 4px;
+      border-radius: 4px;
+      color: white;
+      background: rgba(253, 224, 71, 0.1);
+    }
+    .bb-kv {
+      background: rgba(255,255,255,0.06);
+      border: 1px solid rgba(255,255,255,0.12);
+      border-radius: 8px;
+      padding: 8px 10px;
+      margin-top: 10px;
+      font-size: 0.9rem;
+    }
+  </style>
 </head>
+
 <body>
-
-    <div class="container">
-        <div id="home-view">
-            <header>
-                <div class="header-left">
-                    <div class="logo-box">🐾</div>
-                    <div class="header-text">
-                        <h1>Mr. Meowgi's Dojo</h1>
-                        <p>Master Stats to Unlock Time!</p>
-                    </div>
-                </div>
-                <div class="stats-badge">
-                    <span>🕒</span>
-                    <span id="unlocked-minutes">0m</span>
-                </div>
-            </header>
-            <div class="topics-grid">
-                <div class="topic-card" onclick="startQuiz('Mean')"><h3>Mean</h3></div>
-                <div class="topic-card" onclick="startQuiz('Median')"><h3>Median</h3></div>
-                <div class="topic-card" onclick="startQuiz('Mode')"><h3>Mode</h3></div>
-                <div class="topic-card" onclick="startQuiz('Range')"><h3>Range</h3></div>
-                <div class="topic-card" onclick="startQuiz('Random')"><h3>Random</h3></div>
-            </div>
+  <div class="container">
+    <div id="home-view">
+      <header>
+        <div class="header-left">
+          <div class="logo-box">🐾</div>
+          <div class="header-text">
+            <h1>Mr. Meowgi's Dojo</h1>
+            <p>Master Stats to Unlock Time!</p>
+          </div>
         </div>
-
-        <div id="quiz-view" class="hidden">
-            <div id="progress-container" class="progress-container"></div>
-            <div class="quiz-nav">
-                <button class="exit-btn" onclick="showHome()">🏠 Exit</button>
-                <div id="q-counter" class="q-counter">1 / 10</div>
-            </div>
-
-            <div class="quiz-card">
-                <div class="quiz-header">
-                    <div id="number-set" class="number-set"></div>
-                    <div id="question-text" class="question-text"></div>
-                </div>
-                <div id="options-grid" class="options-grid"></div>
-
-                <div id="blackboard" class="blackboard">
-                    <div class="blackboard-trim"></div>
-                    <div class="blackboard-header">
-                        <div style="display:flex; align-items:center; gap:0.5rem">
-                            <span>🐾</span>
-                            <span style="font-size:10px; font-weight:bold; color:#fde047; text-transform:uppercase">Dojo Correction</span>
-                        </div>
-                        <div style="font-size:10px; font-weight:bold; color:#f87171; text-transform:uppercase">❌ Incorrect</div>
-                    </div>
-                    <div id="blackboard-content" class="blackboard-content"></div>
-                    <div class="blackboard-footer">
-                        <button class="primary-btn" onclick="nextQuestion()">Next Question ➡️</button>
-                    </div>
-                </div>
-            </div>
+        <div class="stats-badge">
+          <span>🕒</span>
+          <span id="unlocked-minutes">0m</span>
         </div>
+      </header>
 
-        <div id="results-view" class="hidden">
-            <div class="results-card">
-                <h2>Training Done!</h2>
-                <div id="final-score" class="score-text">Score: 0 / 10</div>
-                <button class="primary-btn" style="width: 100%; padding: 1.25rem; font-size: 1.25rem;" onclick="showHome()">Back to Dojo</button>
-            </div>
+      <div class="topics-grid">
+        <div class="topic-card" onclick="startQuiz('Mean')"><h3>Mean</h3></div>
+        <div class="topic-card" onclick="startQuiz('Median')"><h3>Median</h3></div>
+        <div class="topic-card" onclick="startQuiz('Mode')"><h3>Mode</h3></div>
+        <div class="topic-card" onclick="startQuiz('Range')"><h3>Range</h3></div>
+        <div class="topic-card" onclick="startQuiz('Random')"><h3>Random</h3></div>
+
+        <div class="topic-card" onclick="startQuiz('RandomComplex')">
+          <h3>Random Complex</h3>
+          <p>Missing values • Constraints • Word problems</p>
         </div>
+      </div>
     </div>
 
-    <script>
-        let currentQuiz = null;
-        let userStats = { unlockedMinutes: 0 };
-        let isProcessing = false;
+    <div id="quiz-view" class="hidden">
+      <div id="progress-container" class="progress-container"></div>
+      <div class="quiz-nav">
+        <button class="exit-btn" onclick="showHome()">🏠 Exit</button>
+        <div id="q-counter" class="q-counter">1 / 10</div>
+      </div>
 
-        const TYPE_SPEED = 50; 
-        const STEP_DELAY = 600;
+      <div class="quiz-card">
+        <div class="quiz-header">
+          <div id="number-set" class="number-set"></div>
+          <div id="question-text" class="question-text"></div>
+        </div>
+        <div id="options-grid" class="options-grid"></div>
 
-        function shuffle(array) {
-            let currentIndex = array.length,  randomIndex;
-            while (currentIndex != 0) {
-                randomIndex = Math.floor(Math.random() * currentIndex);
-                currentIndex--;
-                [array[currentIndex], array[randomIndex]] = [array[randomIndex], array[currentIndex]];
-            }
-            return array;
-        }
+        <div id="blackboard" class="blackboard">
+          <div class="blackboard-trim"></div>
+          <div class="blackboard-header">
+            <div style="display:flex; align-items:center; gap:0.5rem">
+              <span>🐾</span>
+              <span style="font-size:10px; font-weight:bold; color:#fde047; text-transform:uppercase">Dojo Correction</span>
+            </div>
+            <div style="font-size:10px; font-weight:bold; color:#f87171; text-transform:uppercase">❌ Incorrect</div>
+          </div>
+          <div id="blackboard-content" class="blackboard-content"></div>
+          <div class="blackboard-footer">
+            <button class="primary-btn" onclick="nextQuestion()">Next Question ➡️</button>
+          </div>
+        </div>
+      </div>
+    </div>
 
-        function generateData(count, min, max) {
-            return Array.from({ length: count }, () => Math.floor(Math.random() * (max - min + 1)) + min);
-        }
+    <div id="results-view" class="hidden">
+      <div class="results-card">
+        <h2>Training Done!</h2>
+        <div id="final-score" class="score-text">Score: 0 / 10</div>
+        <button class="primary-btn" style="width:100%; padding:1.25rem; font-size:1.25rem;" onclick="showHome()">Back to Dojo</button>
+      </div>
+    </div>
+  </div>
 
-        function generateQuestion(topic) {
-            const dataSize = Math.floor(Math.random() * 3) + 4;
-            let rawData = generateData(dataSize, 2, 12);
-            let questionText = "";
-            let correctAnswer = "";
-            let steps = [];
+  <script>
+    let currentQuiz = null;
+    let userStats = { unlockedMinutes: 0 };
+    let isProcessing = false;
 
-            if (topic === 'Random') {
-                const topics = ['Mean', 'Median', 'Mode', 'Range'];
-                topic = topics[Math.floor(Math.random() * topics.length)];
-            }
+    const TYPE_SPEED = 45;
+    const STEP_DELAY = 550;
 
-            switch (topic) {
-                case 'Mean':
-                    const sum = rawData.reduce((a, b) => a + b, 0);
-                    const cleanSum = Math.round(sum / rawData.length) * rawData.length;
-                    if (sum !== cleanSum) rawData[0] += (cleanSum - sum);
-                    const finalMean = cleanSum / rawData.length;
-                    questionText = `What is the mean?`;
-                    correctAnswer = finalMean.toString();
-                    steps = [
-                        { label: 'Step 1', instruction: `Step 1: Add them all together: ${rawData.join(' + ')}`, expected: `= ${cleanSum}` },
-                        { label: 'Step 2', instruction: `Step 2: Divide the total by the count of numbers (${rawData.length}): ${cleanSum} ÷ ${rawData.length}`, expected: `= ${correctAnswer}` }
-                    ];
-                    break;
+    // ---------- Helpers ----------
+    function randInt(min, max) { return Math.floor(Math.random() * (max - min + 1)) + min; }
+    function pick(arr) { return arr[Math.floor(Math.random() * arr.length)]; }
 
-                case 'Median':
-                    const sortedMed = [...rawData].sort((a, b) => a - b);
-                    const isEvenMed = rawData.length % 2 === 0;
-                    const midMed = Math.floor(rawData.length / 2);
-                    const medianValue = !isEvenMed ? sortedMed[midMed] : (sortedMed[midMed - 1] + sortedMed[midMed]) / 2;
-                    questionText = "Find the median.";
-                    correctAnswer = medianValue.toString();
-                    steps = [
-                        { label: 'Step 1', instruction: "Step 1: Order smallest to largest.", expected: `= ${sortedMed.join(', ')}` },
-                        { label: 'Step 2', instruction: "Step 2: Check if the count of numbers is even or odd.", expected: `Count is ${rawData.length} (${isEvenMed ? "Even" : "Odd"})` },
-                        { 
-                            label: 'Step 3', 
-                            instruction: isEvenMed 
-                                ? `Step 3: Since the count is even, take the middle two numbers and find their average: (${sortedMed[midMed-1]} + ${sortedMed[midMed]}) ÷ 2` 
-                                : `Step 3: Since the count is odd, pick the single middle number.`, 
-                            expected: `= ${correctAnswer}` 
-                        }
-                    ];
-                    break;
+    function shuffle(array) {
+      let currentIndex = array.length, randomIndex;
+      while (currentIndex !== 0) {
+        randomIndex = Math.floor(Math.random() * currentIndex);
+        currentIndex--;
+        [array[currentIndex], array[randomIndex]] = [array[randomIndex], array[currentIndex]];
+      }
+      return array;
+    }
 
-                case 'Mode':
-                    // Force a mode
-                    const modeVal = Math.floor(Math.random() * 8) + 2;
-                    rawData[0] = modeVal;
-                    rawData[1] = modeVal;
-                    // Ensure it's the winner
-                    rawData = rawData.map((n, i) => (i > 1 && n === modeVal) ? n + 1 : n);
-                    
-                    const counts = {};
-                    rawData.forEach(n => counts[n] = (counts[n] || 0) + 1);
-                    const finalMode = Object.keys(counts).reduce((a, b) => counts[a] > counts[b] ? a : b);
-                    
-                    questionText = "What is the mode?";
-                    correctAnswer = finalMode;
+    function formatNumber(n) {
+      const rounded = Math.round(n * 10) / 10;
+      return Number.isInteger(rounded) ? String(rounded) : String(rounded);
+    }
 
-                    const sortedMode = [...rawData].sort((a, b) => a - b);
-                    const groups = [];
-                    let currentGroup = [];
-                    sortedMode.forEach((n, i) => {
-                        if (i === 0 || n === sortedMode[i-1]) {
-                            currentGroup.push(n);
-                        } else {
-                            groups.push(currentGroup);
-                            currentGroup = [n];
-                        }
-                    });
-                    groups.push(currentGroup);
+    function sum(arr) { return arr.reduce((a, b) => a + b, 0); }
 
-                    const visualGroups = groups.map(g => {
-                        const isMode = g[0].toString() === finalMode.toString();
-                        return `<span class="bb-mode-box ${isMode ? 'winner' : ''}">${g.join(', ')}</span>`;
-                    }).join(' ');
+    function countsMap(arr) {
+      const m = {};
+      for (const n of arr) m[n] = (m[n] || 0) + 1;
+      return m;
+    }
 
-                    steps = [
-                        { label: 'Step 1', instruction: "Step 1: Sort and group the same numbers together.", expected: visualGroups },
-                        { label: 'Step 2', instruction: "Step 2: Find the group with the most numbers.", expected: `= ${finalMode}` }
-                    ];
-                    break;
+    function sortedCopy(arr) { return [...arr].sort((a, b) => a - b); }
 
-                case 'Range':
-                    const maxVal = Math.max(...rawData);
-                    const minVal = Math.min(...rawData);
-                    const rangeVal = maxVal - minVal;
-                    const sortedRange = [...rawData].sort((a, b) => a - b);
-                    
-                    const visualRangeOrder = sortedRange.map((n, i) => {
-                        if (i === 0 || i === sortedRange.length - 1) {
-                            return `<span class="bb-range-highlight">${n}</span>`;
-                        }
-                        return n;
-                    }).join(', ');
+    function buildNumberOptions(correctStr, count = 4) {
+      const correct = parseFloat(correctStr);
+      const opts = new Set([correctStr]);
+      const stepPool = [0.5, 1, 2, 3, 4, 5];
 
-                    questionText = "What is the range?";
-                    correctAnswer = rangeVal.toString();
-                    steps = [
-                        { label: 'Step 1', instruction: "Step 1: Order from smallest to largest and find the Max and Min.", expected: visualRangeOrder },
-                        { label: 'Step 2', instruction: `Step 2: Subtract Min from Max: ${maxVal} - ${minVal}`, expected: `= ${rangeVal}` }
-                    ];
-                    break;
-            }
+      while (opts.size < count) {
+        const step = pick(stepPool);
+        const dir = Math.random() > 0.5 ? 1 : -1;
+        const candidate = correct + dir * step;
+        if (candidate <= 0) continue;
+        const cStr = formatNumber(candidate);
+        if (cStr !== correctStr) opts.add(cStr);
+      }
+      return shuffle(Array.from(opts));
+    }
 
-            const displayData = shuffle([...rawData]);
-            const options = new Set([correctAnswer]);
-            while (options.size < 4) {
-                const off = Math.floor(Math.random() * 5) + 1;
-                const val = (parseFloat(correctAnswer) + (Math.random() > 0.5 ? off : -off)).toString();
-                if (val !== "0" && val !== correctAnswer) options.add(val);
-            }
+    function buildTextOptions(correctStr, distractors, count = 4) {
+      const pool = [correctStr, ...distractors].filter(Boolean);
+      const unique = Array.from(new Set(pool));
+      if (!unique.includes(correctStr)) unique.unshift(correctStr);
+      while (unique.length < count) unique.push("None of these");
+      return shuffle(unique.slice(0, count));
+    }
 
-            return { 
-                data: displayData, 
-                questionText, 
-                correctAnswer, 
-                steps, 
-                options: Array.from(options).sort(() => Math.random() - 0.5) 
-            };
-        }
+    function step(label, instruction, expected) {
+      return { label, instruction, expected };
+    }
 
-        function typeText(element, text, delay = 0, speed = TYPE_SPEED) {
-            element.innerHTML = '';
-            if (text.includes('<')) {
-                return new Promise(resolve => {
-                    setTimeout(() => {
-                        element.innerHTML = text;
-                        resolve();
-                    }, delay);
-                });
-            }
-
-            return new Promise(resolve => {
-                setTimeout(() => {
-                    let i = 0;
-                    function tick() {
-                        if (i < text.length) {
-                            const span = document.createElement('span');
-                            span.className = 'char';
-                            span.textContent = text[i];
-                            element.appendChild(span);
-                            i++;
-                            setTimeout(tick, speed);
-                        } else {
-                            setTimeout(resolve, 100);
-                        }
-                    }
-                    tick();
-                }, delay);
-            });
-        }
-
-        function showHome() {
-            document.getElementById('home-view').classList.remove('hidden');
-            document.getElementById('quiz-view').classList.add('hidden');
-            document.getElementById('results-view').classList.add('hidden');
-        }
-
-        function initProgressBar() {
-            const container = document.getElementById('progress-container');
-            container.innerHTML = '';
-            for (let i = 0; i < 10; i++) {
-                const seg = document.createElement('div');
-                seg.className = 'progress-segment';
-                seg.id = `seg-${i}`;
-                container.appendChild(seg);
-            }
-        }
-
-        function updateProgressBar(index, status) {
-            const segments = document.querySelectorAll('.progress-segment');
-            segments.forEach(s => s.classList.remove('current'));
-            
-            const seg = document.getElementById(`seg-${index}`);
-            if (seg) {
-                if (status === 'correct') seg.classList.add('correct');
-                else if (status === 'wrong') seg.classList.add('wrong');
-                else seg.classList.add('current');
-            }
-        }
-
-        function startQuiz(topic) {
-            const questions = Array.from({ length: 10 }, () => generateQuestion(topic));
-            currentQuiz = { questions, currentIndex: 0, score: 0, results: [] };
-            document.getElementById('home-view').classList.add('hidden');
-            document.getElementById('quiz-view').classList.remove('hidden');
-            initProgressBar();
-            renderQuestion();
-        }
-
-        function renderQuestion() {
-            const q = currentQuiz.questions[currentQuiz.currentIndex];
-            isProcessing = false;
-            
-            updateProgressBar(currentQuiz.currentIndex, 'current');
-            document.getElementById('q-counter').textContent = `${currentQuiz.currentIndex + 1} / 10`;
-            document.getElementById('blackboard').classList.remove('active');
-            
-            const numSet = document.getElementById('number-set');
-            numSet.innerHTML = '';
-            q.data.forEach((n, i) => {
-                const pill = document.createElement('div');
-                pill.className = 'number-pill';
-                pill.textContent = n;
-                pill.style.animationDelay = `${i * 0.1}s`;
-                numSet.appendChild(pill);
-            });
-
-            typeText(document.getElementById('question-text'), q.questionText, 300, 40);
-
-            const grid = document.getElementById('options-grid');
-            grid.innerHTML = '';
-            q.options.forEach(opt => {
-                const btn = document.createElement('button');
-                btn.className = 'option-btn';
-                btn.innerHTML = `<span>${opt}</span>`;
-                btn.onclick = () => handleAnswer(opt, btn);
-                grid.appendChild(btn);
-            });
-        }
-
-        function handleAnswer(selected, btn) {
-            if (isProcessing) return;
-            isProcessing = true;
-            const q = currentQuiz.questions[currentQuiz.currentIndex];
-            const isCorrect = selected === q.correctAnswer;
-
-            if (isCorrect) {
-                btn.classList.add('correct');
-                currentQuiz.score++;
-                currentQuiz.results.push(true);
-                updateProgressBar(currentQuiz.currentIndex, 'correct');
-                confetti({ particleCount: 80, spread: 70, origin: { y: 0.6 } });
-                setTimeout(nextQuestion, 1200);
+    function typeText(element, text, delay = 0, speed = TYPE_SPEED) {
+      element.innerHTML = '';
+      if (text.includes('<')) {
+        return new Promise(resolve => {
+          setTimeout(() => { element.innerHTML = text; resolve(); }, delay);
+        });
+      }
+      return new Promise(resolve => {
+        setTimeout(() => {
+          let i = 0;
+          function tick() {
+            if (i < text.length) {
+              const span = document.createElement('span');
+              span.className = 'char';
+              span.textContent = text[i];
+              element.appendChild(span);
+              i++;
+              setTimeout(tick, speed);
             } else {
-                btn.classList.add('wrong-shake');
-                currentQuiz.results.push(false);
-                updateProgressBar(currentQuiz.currentIndex, 'wrong');
-                setTimeout(() => showBlackboard(), 600);
+              setTimeout(resolve, 100);
             }
-        }
+          }
+          tick();
+        }, delay);
+      });
+    }
 
-        async function showBlackboard() {
-            const q = currentQuiz.questions[currentQuiz.currentIndex];
-            const board = document.getElementById('blackboard');
-            const content = document.getElementById('blackboard-content');
-            content.innerHTML = '';
-            board.classList.add('active');
+    // ---------- Question builders ----------
+    // Each generator returns:
+    // { topic, typeLabel, data, pills, questionText, correctAnswer, answerKind, steps, options }
 
-            const problemBox = document.createElement('div');
-            problemBox.className = 'bb-original-problem';
-            problemBox.innerHTML = `
-                <div class="bb-numbers">${q.data.join(', ')}</div>
-                <div class="bb-question">${q.questionText}</div>
-            `;
-            content.appendChild(problemBox);
+    function meanType1() {
+      const n = randInt(4, 6);
+      const data = Array.from({ length: n }, () => randInt(2, 12));
 
-            const intro = document.createElement('div');
-            intro.className = 'correction-intro';
-            content.appendChild(intro);
-            await typeText(intro, "Let's review the dojo steps...", 100, 35);
+      // adjust to make mean "nice" (integer)
+      const s = sum(data);
+      const target = s / n;
+      const desired = Math.round(target);
+      const adjustedSum = desired * n;
+      const delta = adjustedSum - s;
+      data[0] += delta;
 
-            for (let i = 0; i < q.steps.length; i++) {
-                const step = q.steps[i];
-                const block = document.createElement('div');
-                block.className = 'step-block';
-                
-                block.innerHTML = `
-                    <div class="step-label">${step.label}</div>
-                    <div class="step-instruction" id="step-inst-${i}"></div>
-                    <div class="step-result" id="step-res-${i}"></div>
-                `;
-                content.appendChild(block);
-                content.scrollTop = content.scrollHeight;
+      const X = sum(data);
+      const A = X / n;
+      const mn = Math.min(...data);
+      const mx = Math.max(...data);
 
-                await new Promise(r => setTimeout(r, STEP_DELAY));
-                await typeText(document.getElementById(`step-inst-${i}`), step.instruction, 0, TYPE_SPEED);
-                await new Promise(r => setTimeout(r, 400));
-                await typeText(document.getElementById(`step-res-${i}`), step.expected, 0, TYPE_SPEED + 10);
-                
-                content.scrollTop = content.scrollHeight;
+      const correctAnswer = formatNumber(A);
+      const steps = [
+        step("Step 1", `Add all numbers → X = ${data.join(" + ")}`, `= ${X}`),
+        step("Step 2", `Count how many numbers → n = ${n}`, `= ${n}`),
+        step("Step 3", `Divide → A = X / n = ${X} ÷ ${n}`, `= ${correctAnswer}`),
+        step("Quick check", `Check min ≤ A ≤ max`, `min=${mn}, A=${correctAnswer}, max=${mx}`)
+      ];
+
+      return {
+        topic: "Mean",
+        typeLabel: "Mean • Type 1 (Compute from list)",
+        data,
+        pills: data.map(v => ({ value: v, unknown: false })),
+        questionText: `Find the mean of: ${data.join(", ")}`,
+        correctAnswer,
+        answerKind: "number",
+        steps,
+        options: buildNumberOptions(correctAnswer),
+      };
+    }
+
+    function meanType2() {
+      const names = ["Sam", "Aisha", "Leo", "Mina", "Jay", "Noor"];
+      const name = pick(names);
+      const n = randInt(4, 5);
+      const data = Array.from({ length: n }, () => randInt(4, 10));
+      const X = sum(data);
+      const A = X / n;
+      const mn = Math.min(...data);
+      const mx = Math.max(...data);
+
+      const correctAnswer = formatNumber(A);
+      const steps = [
+        step("Step 1", `Pull out the numbers from the story → dataset`, `= ${data.join(", ")}`),
+        step("Step 2", `Add all numbers → X = ${data.join(" + ")}`, `= ${X}`),
+        step("Step 3", `Count how many numbers → n = ${n}`, `= ${n}`),
+        step("Step 4", `Divide → A = X / n = ${X} ÷ ${n}`, `= ${correctAnswer}`),
+        step("Quick check", `Check min ≤ A ≤ max`, `min=${mn}, A=${correctAnswer}, max=${mx}`),
+        step("Answer in context", `Say it with the label`, `${name}'s average score is ${correctAnswer}.`)
+      ];
+
+      return {
+        topic: "Mean",
+        typeLabel: "Mean • Type 2 (Word problem)",
+        data,
+        pills: data.map(v => ({ value: v, unknown: false })),
+        questionText: `${name}'s scores are ${data.join(", ")}. What's ${name}'s average score?`,
+        correctAnswer,
+        answerKind: "number",
+        steps,
+        options: buildNumberOptions(correctAnswer),
+      };
+    }
+
+    function meanType3() {
+      let tries = 0;
+      while (tries++ < 50) {
+        const n = 5;
+        const mean = randInt(6, 12);
+        const known = Array.from({ length: n - 1 }, () => randInt(2, 12));
+        const requiredSum = mean * n;
+        const knownSum = sum(known);
+        const y = requiredSum - knownSum;
+        if (y < 1 || y > 20) continue;
+
+        const dataset = [...known, y];
+        const checkMean = sum(dataset) / n;
+
+        const correctAnswer = formatNumber(y);
+        const steps = [
+          step("Step 1", `Total needed → requiredSum = mean × n = ${mean} × ${n}`, `= ${requiredSum}`),
+          step("Step 2", `Add known numbers → knownSum = ${known.join(" + ")}`, `= ${knownSum}`),
+          step("Step 3", `Subtract → y = requiredSum − knownSum`, `= ${requiredSum} − ${knownSum} = ${correctAnswer}`),
+          step("Quick check", `Plug y back in and recompute mean`, `(${knownSum} + ${correctAnswer}) ÷ ${n} = ${formatNumber(checkMean)} ✅`)
+        ];
+
+        return {
+          topic: "Mean",
+          typeLabel: "Mean • Type 3 (Missing number given mean)",
+          data: known,
+          pills: known.map(v => ({ value: v, unknown: false })).concat([{ value: "?", unknown: true }]),
+          questionText: `The mean of ${n} numbers is ${mean}. The numbers are ${known.join(", ")}, y. Find y.`,
+          correctAnswer,
+          answerKind: "number",
+          steps,
+          options: buildNumberOptions(correctAnswer),
+        };
+      }
+      return meanType1();
+    }
+
+    function meanType4() {
+      const n = 5;
+      const mean = randInt(7, 12);
+      const known = Array.from({ length: n - 1 }, () => randInt(3, 13));
+      const requiredSum = mean * n;
+      const knownSum = sum(known);
+      const x = requiredSum - knownSum;
+      const correctAnswer = formatNumber(x);
+
+      const steps = [
+        step("Option A (fast)", `Compute requiredSum = mean × n = ${mean} × ${n}`, `= ${requiredSum}`),
+        step("Option A (fast)", `Compute knownSum = ${known.join(" + ")}`, `= ${knownSum}`),
+        step("Option A (fast)", `Compute needed x = requiredSum − knownSum`, `= ${requiredSum} − ${knownSum} = ${correctAnswer}`),
+        step("Pick the choice", `Pick the option that matches x`, `x = ${correctAnswer}`)
+      ];
+
+      const options = new Set([correctAnswer]);
+      while (options.size < 4) {
+        const off = pick([1, 2, 3, 4, 5]);
+        const cand = x + (Math.random() > 0.5 ? off : -off);
+        if (cand <= 0) continue;
+        options.add(formatNumber(cand));
+      }
+
+      return {
+        topic: "Mean",
+        typeLabel: "Mean • Type 4 (Which could x be?)",
+        data: known,
+        pills: known.map(v => ({ value: v, unknown: false })).concat([{ value: "x", unknown: true }]),
+        questionText: `Mean is ${mean}. Numbers: ${known.join(", ")}, x. Which could x be?`,
+        correctAnswer,
+        answerKind: "number",
+        steps,
+        options: shuffle(Array.from(options)),
+      };
+    }
+
+    function meanType5() {
+      const n = randInt(4, 6);
+      const oldMean = randInt(5, 12);
+      const delta = randInt(1, 4);
+      const meanChange = delta / n;
+      const newMean = oldMean + meanChange;
+
+      const correctAnswer = formatNumber(newMean);
+      const steps = [
+        step("Step 1", `Identify change in total`, `+${delta}`),
+        step("Step 2", `Spread change over n → mean change = total change / n`, `= ${delta} ÷ ${n} = ${formatNumber(meanChange)}`),
+        step("Step 3", `New mean = old mean + mean change`, `= ${oldMean} + ${formatNumber(meanChange)} = ${correctAnswer}`),
+        step("Quick check", `Mean should move in the same direction as the change`, `It increased ✅`)
+      ];
+
+      return {
+        topic: "Mean",
+        typeLabel: "Mean • Type 5 (Fix the mean)",
+        data: [],
+        pills: Array.from({ length: n }, () => ({ value: "•", unknown: false })),
+        questionText: `The mean was ${oldMean} for ${n} scores. One score increases by ${delta}. What is the new mean?`,
+        correctAnswer,
+        answerKind: "number",
+        steps,
+        options: buildNumberOptions(correctAnswer),
+      };
+    }
+
+    function medianType1() {
+      const n = 5;
+      const data = Array.from({ length: n }, () => randInt(2, 15));
+      const sorted = sortedCopy(data);
+      const midPos = (n + 1) / 2;
+      const median = sorted[Math.floor(n / 2)];
+      const correctAnswer = formatNumber(median);
+
+      const steps = [
+        step("Step 1", `Sort least → greatest`, `= ${sorted.join(", ")}`),
+        step("Step 2", `Count n (odd)`, `n = ${n}`),
+        step("Step 3", `Middle position = (n+1)/2`, `= (${n}+1)/2 = ${midPos}`),
+        step("Step 4", `Pick the middle value`, `= ${correctAnswer}`),
+        step("Quick check", `Median is not outside min/max`, `min=${sorted[0]}, median=${correctAnswer}, max=${sorted[sorted.length - 1]}`)
+      ];
+
+      return {
+        topic: "Median",
+        typeLabel: "Median • Type 1 (Odd count)",
+        data,
+        pills: data.map(v => ({ value: v, unknown: false })),
+        questionText: `Compute the median of: ${data.join(", ")}`,
+        correctAnswer,
+        answerKind: "number",
+        steps,
+        options: buildNumberOptions(correctAnswer),
+      };
+    }
+
+    function medianType2() {
+      const n = pick([4, 6]);
+      const data = Array.from({ length: n }, () => randInt(2, 15));
+      const sorted = sortedCopy(data);
+      const pos1 = n / 2;
+      const pos2 = n / 2 + 1;
+      const a = sorted[pos1 - 1], b = sorted[pos2 - 1];
+      const median = (a + b) / 2;
+
+      const correctAnswer = formatNumber(median);
+      const steps = [
+        step("Step 1", `Sort least → greatest`, `= ${sorted.join(", ")}`),
+        step("Step 2", `Count n (even)`, `n = ${n}`),
+        step("Step 3", `Two middle positions: n/2 and n/2+1`, `= ${pos1} and ${pos2}`),
+        step("Step 4", `Average the two middle values: (${a} + ${b}) ÷ 2`, `= ${correctAnswer}`),
+        step("Quick check", `Result is between the two middle values`, `${a} ≤ ${correctAnswer} ≤ ${b}`)
+      ];
+
+      return {
+        topic: "Median",
+        typeLabel: "Median • Type 2 (Even count)",
+        data,
+        pills: data.map(v => ({ value: v, unknown: false })),
+        questionText: `Compute the median of: ${data.join(", ")}`,
+        correctAnswer,
+        answerKind: "number",
+        steps,
+        options: buildNumberOptions(correctAnswer),
+      };
+    }
+
+    function medianType3() {
+      const names = ["Nina", "Omar", "Kai", "Zara", "Ivy"];
+      const name = pick(names);
+      const n = pick([5, 6]);
+      const data = Array.from({ length: n }, () => randInt(2, 15));
+      const sorted = sortedCopy(data);
+
+      let median, steps;
+      if (n % 2 === 1) {
+        const midPos = (n + 1) / 2;
+        median = sorted[Math.floor(n / 2)];
+        steps = [
+          step("Step 1", `Extract dataset from the story`, `= ${data.join(", ")}`),
+          step("Step 2", `Sort`, `= ${sorted.join(", ")}`),
+          step("Step 3", `Odd n → middle position (n+1)/2`, `= ${midPos}`),
+          step("Step 4", `Pick the middle value`, `= ${formatNumber(median)}`),
+          step("Answer in context", `Median time is...`, `${name}'s median time is ${formatNumber(median)} minutes.`)
+        ];
+      } else {
+        const pos1 = n / 2, pos2 = n / 2 + 1;
+        const a = sorted[pos1 - 1], b = sorted[pos2 - 1];
+        median = (a + b) / 2;
+        steps = [
+          step("Step 1", `Extract dataset from the story`, `= ${data.join(", ")}`),
+          step("Step 2", `Sort`, `= ${sorted.join(", ")}`),
+          step("Step 3", `Even n → middle positions n/2 and n/2+1`, `= ${pos1} and ${pos2}`),
+          step("Step 4", `Average the two middle values: (${a} + ${b}) ÷ 2`, `= ${formatNumber(median)}`),
+          step("Answer in context", `Median time is...`, `${name}'s median time is ${formatNumber(median)} minutes.`)
+        ];
+      }
+
+      const correctAnswer = formatNumber(median);
+      return {
+        topic: "Median",
+        typeLabel: "Median • Type 3 (Word problem)",
+        data,
+        pills: data.map(v => ({ value: v, unknown: false })),
+        questionText: `${name}'s times (in minutes) are ${data.join(", ")}. What is the median time?`,
+        correctAnswer,
+        answerKind: "number",
+        steps,
+        options: buildNumberOptions(correctAnswer),
+      };
+    }
+
+    function medianType5_mcq() {
+      const target = randInt(6, 12);
+
+      const low1 = randInt(1, target - 3);
+      const low2 = randInt(low1 + 1, target - 1);
+      const high1 = randInt(target + 1, target + 4);
+      const high2 = randInt(high1 + 1, target + 7);
+
+      const known = [low1, low2, high1, high2];
+      const correctX = target;
+
+      const correctAnswer = formatNumber(correctX);
+      const steps = [
+        step("Step 1", `For each option, substitute x`, `Try x = (choice)`),
+        step("Step 2", `Sort the 5 numbers`, `Then find the middle one`),
+        step("Step 3", `Pick the option that makes the middle value = ${target}`, `Correct x = ${correctAnswer}`)
+      ];
+
+      const options = new Set([correctAnswer]);
+      while (options.size < 4) {
+        const cand = target + pick([-4, -3, -2, -1, 1, 2, 3, 4]);
+        if (cand <= 0) continue;
+        options.add(formatNumber(cand));
+      }
+
+      return {
+        topic: "Median",
+        typeLabel: "Median • Type 5 (Which x could work?)",
+        data: known,
+        pills: known.map(v => ({ value: v, unknown: false })).concat([{ value: "x", unknown: true }]),
+        questionText: `Numbers: ${known.join(", ")}, x. Which could x be so the median is ${target}?`,
+        correctAnswer,
+        answerKind: "number",
+        steps,
+        options: shuffle(Array.from(options)),
+      };
+    }
+
+    function modeType1_single() {
+      const modeVal = randInt(2, 12);
+      const data = Array.from({ length: 5 }, () => randInt(2, 12));
+      data[0] = modeVal; data[1] = modeVal;
+      for (let i = 2; i < data.length; i++) if (data[i] === modeVal) data[i] += 1;
+
+      const m = countsMap(data);
+      const maxFreq = Math.max(...Object.values(m));
+      const winners = Object.keys(m).filter(k => m[k] === maxFreq).map(Number);
+
+      const correctAnswer = String(winners[0]);
+      const freqLines = Object.keys(m).sort((a, b) => Number(a) - Number(b))
+        .map(k => `${k}: ${m[k]}`).join(" | ");
+
+      const steps = [
+        step("Step 1", `Count frequency of each value`, `= ${freqLines}`),
+        step("Step 2", `Identify which appears most`, `Highest frequency = ${maxFreq}`),
+        step("Step 3", `Mode = that value`, `= ${correctAnswer}`),
+        step("Quick check", `Confirm it appears more than any other`, `${correctAnswer} appears ${maxFreq} times ✅`)
+      ];
+
+      return {
+        topic: "Mode",
+        typeLabel: "Mode • Type 1 (Single mode)",
+        data,
+        pills: data.map(v => ({ value: v, unknown: false })),
+        questionText: `Find the mode of: ${data.join(", ")}`,
+        correctAnswer,
+        answerKind: "number",
+        steps,
+        options: buildNumberOptions(correctAnswer),
+      };
+    }
+
+    function modeType2_multimodal() {
+      const a = randInt(2, 10);
+      let b = randInt(2, 10);
+      while (b === a) b = randInt(2, 10);
+      let c = randInt(2, 12);
+      while (c === a || c === b) c = randInt(2, 12);
+
+      const data = shuffle([a, a, b, b, c]);
+      const m = countsMap(data);
+      const maxFreq = Math.max(...Object.values(m));
+      const winners = Object.keys(m).filter(k => m[k] === maxFreq).map(Number).sort((x, y) => x - y);
+
+      const correctAnswer = winners.join(" and ");
+      const freqLines = Object.keys(m).sort((x, y) => Number(x) - Number(y))
+        .map(k => `${k}: ${m[k]}`).join(" | ");
+
+      const steps = [
+        step("Step 1", `Count frequencies`, `= ${freqLines}`),
+        step("Step 2", `Find the highest frequency`, `Highest frequency = ${maxFreq}`),
+        step("Step 3", `List every value with that frequency`, `= ${correctAnswer}`),
+        step("Quick check", `No other value has higher frequency`, `✅`)
+      ];
+
+      const distractors = [
+        String(winners[0]),
+        String(winners[1]),
+        "No mode",
+        `${winners[0]} and ${c}`,
+        `${winners[1]} and ${c}`,
+      ];
+
+      return {
+        topic: "Mode",
+        typeLabel: "Mode • Type 2 (Multi-modal)",
+        data,
+        pills: data.map(v => ({ value: v, unknown: false })),
+        questionText: `This set has more than one mode. What are the modes?`,
+        correctAnswer,
+        answerKind: "text",
+        steps,
+        options: buildTextOptions(correctAnswer, distractors),
+      };
+    }
+
+    function modeType3_noMode() {
+      const data = shuffle([randInt(2, 12), randInt(2, 12), randInt(2, 12), randInt(2, 12), randInt(2, 12)]);
+      const set = new Set();
+      for (let i = 0; i < data.length; i++) {
+        while (set.has(data[i])) data[i] = randInt(2, 12);
+        set.add(data[i]);
+      }
+
+      const m = countsMap(data);
+      const freqLines = Object.keys(m).sort((x, y) => Number(x) - Number(y))
+        .map(k => `${k}: ${m[k]}`).join(" | ");
+
+      const correctAnswer = "No mode";
+      const steps = [
+        step("Step 1", `Count frequencies`, `= ${freqLines}`),
+        step("Step 2", `If all frequencies are the same (usually all 1)`, `All are 1`),
+        step("Step 3", `Then there is no mode`, `= ${correctAnswer}`),
+        step("Quick check", `Nothing repeats more than others`, `✅`)
+      ];
+
+      const distractors = [
+        String(pick(data)),
+        `${data[0]} and ${data[1]}`,
+        `${data[2]} and ${data[3]}`,
+      ];
+
+      return {
+        topic: "Mode",
+        typeLabel: "Mode • Type 3 (No mode)",
+        data,
+        pills: data.map(v => ({ value: v, unknown: false })),
+        questionText: `Find the mode of: ${data.join(", ")} (or decide if there is no mode).`,
+        correctAnswer,
+        answerKind: "text",
+        steps,
+        options: buildTextOptions(correctAnswer, distractors),
+      };
+    }
+
+    function modeType4_makeTargetMode() {
+      const target = randInt(3, 12);
+      const data = [target];
+      while (data.length < 4) {
+        const v = randInt(2, 12);
+        if (!data.includes(v)) data.push(v);
+      }
+      const correctAnswer = String(target);
+
+      const beforeCounts = countsMap(data);
+      const beforeLine = Object.keys(beforeCounts).sort((a, b) => Number(a) - Number(b))
+        .map(k => `${k}:${beforeCounts[k]}`).join(" | ");
+
+      const afterCounts = countsMap([...data, target]);
+      const afterLine = Object.keys(afterCounts).sort((a, b) => Number(a) - Number(b))
+        .map(k => `${k}:${afterCounts[k]}`).join(" | ");
+
+      const steps = [
+        step("Step 1", `Count frequencies of existing numbers`, `= ${beforeLine}`),
+        step("Step 2", `Target (${target}) needs to become the highest frequency`, `So we increase its count`),
+        step("Step 3", `Choose x to increase target frequency`, `x = ${correctAnswer}`),
+        step("Quick check", `Recount with x`, `= ${afterLine} → ${target} is the mode ✅`)
+      ];
+
+      const options = new Set([correctAnswer]);
+      while (options.size < 4) {
+        const cand = randInt(2, 12);
+        if (cand !== target) options.add(String(cand));
+      }
+
+      return {
+        topic: "Mode",
+        typeLabel: "Mode • Type 4 (Pick x to make target the mode)",
+        data,
+        pills: data.map(v => ({ value: v, unknown: false })).concat([{ value: "x", unknown: true }]),
+        questionText: `${data.join(", ")}, x. Make ${target} the mode. What should x be?`,
+        correctAnswer,
+        answerKind: "number",
+        steps,
+        options: shuffle(Array.from(options)),
+      };
+    }
+
+    function modeType5_mcq() {
+      const target = randInt(2, 12);
+      const data = [target];
+      while (data.length < 4) {
+        const v = randInt(2, 12);
+        if (!data.includes(v)) data.push(v);
+      }
+      const correctAnswer = String(target);
+
+      const steps = [
+        step("Step 1", `For each option, substitute x`, `Try x = (choice)`),
+        step("Step 2", `Count frequency`, `See which value repeats most`),
+        step("Step 3", `Pick the option that makes ${target} the mode`, `Correct x = ${correctAnswer}`)
+      ];
+
+      const options = new Set([correctAnswer]);
+      while (options.size < 4) {
+        const cand = randInt(2, 12);
+        if (cand !== target) options.add(String(cand));
+      }
+
+      return {
+        topic: "Mode",
+        typeLabel: "Mode • Type 5 (Which x could work?)",
+        data,
+        pills: data.map(v => ({ value: v, unknown: false })).concat([{ value: "x", unknown: true }]),
+        questionText: `Numbers: ${data.join(", ")}, x. Which x makes ${target} the mode?`,
+        correctAnswer,
+        answerKind: "number",
+        steps,
+        options: shuffle(Array.from(options)),
+      };
+    }
+
+    function rangeType1() {
+      const n = randInt(4, 6);
+      const data = Array.from({ length: n }, () => randInt(2, 15));
+      const mn = Math.min(...data);
+      const mx = Math.max(...data);
+      const range = mx - mn;
+
+      const sorted = sortedCopy(data);
+      const visual = sorted.map((v, i) => {
+        if (i === 0 || i === sorted.length - 1) return `<span class="bb-range-highlight">${v}</span>`;
+        return v;
+      }).join(", ");
+
+      const correctAnswer = String(range);
+      const steps = [
+        step("Step 1", `Find minimum`, `min = ${mn}`),
+        step("Step 2", `Find maximum`, `max = ${mx}`),
+        step("Step 3", `Range = max − min`, `= ${mx} − ${mn} = ${correctAnswer}`),
+        step("Quick check", `Range ≥ 0; if all equal, range = 0`, `${range >= 0 ? "✅" : "❌"}`),
+        step("Extra", `Sorted view (min/max highlighted)`, visual)
+      ];
+
+      return {
+        topic: "Range",
+        typeLabel: "Range • Type 1 (Compute range)",
+        data,
+        pills: data.map(v => ({ value: v, unknown: false })),
+        questionText: `What is the range of: ${data.join(", ")}?`,
+        correctAnswer,
+        answerKind: "number",
+        steps,
+        options: buildNumberOptions(correctAnswer),
+      };
+    }
+    function rangeType2_missingValue() {
+      const known = Array.from({ length: 3 }, () => randInt(4, 12));
+      const mn = Math.min(...known);
+      const mx = Math.max(...known);
+
+      const makeNewMax = Math.random() > 0.5;
+      const targetRange = randInt(6, 12);
+
+      let x;
+      if (makeNewMax) x = mn + targetRange;
+      else x = mx - targetRange;
+
+      const correctAnswer = String(x);
+
+      const assumption = makeNewMax ? "x is the new maximum" : "x is the new minimum";
+      const equation = makeNewMax
+        ? `If x is new max: x − min = targetRange → x = targetRange + min`
+        : `If x is new min: max − x = targetRange → x = max − targetRange`;
+
+      const checkRange = Math.max(...known, x) - Math.min(...known, x);
+
+      const steps = [
+        step("Step 1", `Known min and max`, `min=${mn}, max=${mx}`),
+        step("Step 2", `Decide whether x must be new min or new max`, `${assumption}`),
+        step("Step 3", equation, makeNewMax
+          ? `x = ${targetRange} + ${mn} = ${correctAnswer}`
+          : `x = ${mx} − ${targetRange} = ${correctAnswer}`
+        ),
+        step("Quick check", `Compute the range with x`, `range = ${checkRange} ✅`)
+      ];
+
+      const options = new Set([correctAnswer]);
+      while (options.size < 4) {
+        const cand = x + pick([-4, -3, -2, -1, 1, 2, 3, 4]);
+        if (cand < 0) continue;
+        options.add(String(cand));
+      }
+
+      return {
+        topic: "Range",
+        typeLabel: "Range • Type 2 (Find missing x for target range)",
+        data: known,
+        pills: known.map(v => ({ value: v, unknown: false })).concat([{ value: "x", unknown: true }]),
+        questionText: `Numbers: ${known.join(", ")}, x. Range is ${targetRange}. Assume ${assumption}. Find x.`,
+        correctAnswer,
+        answerKind: "number",
+        steps,
+        options: shuffle(Array.from(options)),
+      };
+    }
+
+    function rangeType3_mcq() {
+      const known = Array.from({ length: 3 }, () => randInt(3, 12));
+      const targetRange = randInt(6, 12);
+
+      const mn = Math.min(...known);
+      const x = mn + targetRange;
+      const correctAnswer = String(x);
+
+      const steps = [
+        step("Step 1", `For each option, substitute x`, `Try x = (choice)`),
+        step("Step 2", `Compute min and max`, `Then range = max − min`),
+        step("Step 3", `Pick the option that gives range = ${targetRange}`, `Correct x = ${correctAnswer}`)
+      ];
+
+      const options = new Set([correctAnswer]);
+      while (options.size < 4) {
+        const cand = x + pick([-6, -4, -3, -2, 2, 3, 4, 6]);
+        if (cand < 0) continue;
+        options.add(String(cand));
+      }
+
+      return {
+        topic: "Range",
+        typeLabel: "Range • Type 3 (Which x could work?)",
+        data: known,
+        pills: known.map(v => ({ value: v, unknown: false })).concat([{ value: "x", unknown: true }]),
+        questionText: `Numbers: ${known.join(", ")}, x. Which x makes the range ${targetRange}?`,
+        correctAnswer,
+        answerKind: "number",
+        steps,
+        options: shuffle(Array.from(options)),
+      };
+    }
+
+    function rangeType4_constrained() {
+      const known = Array.from({ length: 3 }, () => randInt(4, 14));
+      const mn = Math.min(...known);
+
+      const targetRange = randInt(8, 14);
+      const requiredX = mn + targetRange;
+
+      const lowBound = randInt(1, 6);
+      const highBound = randInt(10, 18);
+
+      const correctAnswer = (requiredX >= lowBound && requiredX <= highBound) ? String(requiredX) : "No possible x";
+
+      const steps = [
+        step("Step 1", `Use range logic to find required x (as new max)`, `x = min + targetRange = ${mn} + ${targetRange} = ${requiredX}`),
+        step("Step 2", `Check the constraint`, `${lowBound} ≤ x ≤ ${highBound}`),
+        step("Step 3", `Decide if x is allowed`, correctAnswer === "No possible x"
+          ? `x=${requiredX} is NOT allowed → ${correctAnswer}`
+          : `x=${requiredX} is allowed → ${correctAnswer}`
+        )
+      ];
+
+      const options = correctAnswer === "No possible x"
+        ? buildTextOptions(correctAnswer, [String(requiredX), String(requiredX + 1), "0"])
+        : (() => {
+            const set = new Set([correctAnswer]);
+            while (set.size < 4) {
+              const cand = requiredX + pick([-4, -3, -2, -1, 1, 2, 3, 4]);
+              if (cand < 0) continue;
+              set.add(String(cand));
             }
-        }
+            return shuffle(Array.from(set));
+          })();
 
-        function nextQuestion() {
-            currentQuiz.currentIndex++;
-            if (currentQuiz.currentIndex >= 10) {
-                showResults();
-            } else {
-                renderQuestion();
-            }
-        }
+      return {
+        topic: "Range",
+        typeLabel: "Range • Type 4 (Constrained range)",
+        data: known,
+        pills: known.map(v => ({ value: v, unknown: false })).concat([{ value: "x", unknown: true }]),
+        questionText: `x is between ${lowBound} and ${highBound}. Numbers: ${known.join(", ")}, x. Which answer makes the range ${targetRange}?`,
+        correctAnswer,
+        answerKind: (correctAnswer === "No possible x") ? "text" : "number",
+        steps,
+        options
+      };
+    }
 
-        function showResults() {
-            document.getElementById('quiz-view').classList.add('hidden');
-            document.getElementById('results-view').classList.remove('hidden');
-            document.getElementById('final-score').textContent = `Score: ${currentQuiz.score} / 10`;
-            userStats.unlockedMinutes += (currentQuiz.score * 2);
-            document.getElementById('unlocked-minutes').textContent = `${userStats.unlockedMinutes}m`;
-        }
-    </script>
+    // ---------- Bank + selection ----------
+    const QUESTION_BANK = {
+      Mean: [meanType1, meanType2, meanType3, meanType4, meanType5],
+      Median: [medianType1, medianType2, medianType3, medianType5_mcq],
+      Mode: [modeType1_single, modeType2_multimodal, modeType3_noMode, modeType4_makeTargetMode, modeType5_mcq],
+      Range: [rangeType1, rangeType2_missingValue, rangeType3_mcq, rangeType4_constrained],
+    };
+
+    // curated: “more complex” set
+    const COMPLEX_BANK = [
+      meanType2, meanType3, meanType4, meanType5,
+      medianType3, medianType5_mcq,
+      modeType2_multimodal, modeType3_noMode, modeType4_makeTargetMode, modeType5_mcq,
+      rangeType2_missingValue, rangeType3_mcq, rangeType4_constrained
+    ];
+
+    function generateQuestion(topic) {
+      if (topic === "Random") {
+        const topics = ["Mean", "Median", "Mode", "Range"];
+        const t = pick(topics);
+        const gen = pick(QUESTION_BANK[t]);
+        return gen();
+      }
+      if (topic === "RandomComplex") {
+        const gen = pick(COMPLEX_BANK);
+        return gen();
+      }
+      const gens = QUESTION_BANK[topic] || QUESTION_BANK["Mean"];
+      return pick(gens)();
+    }
+
+    // ---------- UI flow ----------
+    function showHome() {
+      document.getElementById('home-view').classList.remove('hidden');
+      document.getElementById('quiz-view').classList.add('hidden');
+      document.getElementById('results-view').classList.add('hidden');
+      closeBlackboard();
+      isProcessing = false;
+    }
+
+    function initProgressBar() {
+      const container = document.getElementById('progress-container');
+      container.innerHTML = '';
+      for (let i = 0; i < 10; i++) {
+        const seg = document.createElement('div');
+        seg.className = 'progress-segment';
+        seg.id = `seg-${i}`;
+        container.appendChild(seg);
+      }
+    }
+
+    function updateProgressBar(index, status) {
+      const segments = document.querySelectorAll('.progress-segment');
+      segments.forEach(s => s.classList.remove('current'));
+      const seg = document.getElementById(`seg-${index}`);
+      if (seg) {
+        if (status === 'correct') seg.classList.add('correct');
+        else if (status === 'wrong') seg.classList.add('wrong');
+        else seg.classList.add('current');
+      }
+    }
+
+    function startQuiz(topic) {
+      const questions = Array.from({ length: 10 }, () => generateQuestion(topic));
+      currentQuiz = { topic, questions, currentIndex: 0, score: 0, results: [] };
+      document.getElementById('home-view').classList.add('hidden');
+      document.getElementById('quiz-view').classList.remove('hidden');
+      document.getElementById('results-view').classList.add('hidden');
+      initProgressBar();
+      renderQuestion();
+    }
+
+    function setUnlockedMinutesDisplay() {
+      document.getElementById('unlocked-minutes').textContent = `${userStats.unlockedMinutes}m`;
+    }
+
+    function renderQuestion() {
+      if (!currentQuiz) return;
+
+      closeBlackboard();
+      isProcessing = false;
+
+      const q = currentQuiz.questions[currentQuiz.currentIndex];
+
+      document.getElementById('q-counter').textContent = `${currentQuiz.currentIndex + 1} / ${currentQuiz.questions.length}`;
+      updateProgressBar(currentQuiz.currentIndex, 'current');
+
+      // number pills
+      const numberSet = document.getElementById('number-set');
+      numberSet.innerHTML = '';
+      (q.pills || []).forEach(p => {
+        const el = document.createElement('div');
+        el.className = 'number-pill' + (p.unknown ? ' unknown' : '');
+        el.textContent = p.value;
+        numberSet.appendChild(el);
+      });
+
+      // question text
+      document.getElementById('question-text').textContent = q.questionText;
+
+      // options
+      const grid = document.getElementById('options-grid');
+      grid.innerHTML = '';
+      q.options.forEach(opt => {
+        const btn = document.createElement('button');
+        btn.className = 'option-btn';
+        btn.type = 'button';
+        btn.innerHTML = `<span>${opt}</span><span>➡️</span>`;
+        btn.addEventListener('click', () => handleAnswer(btn, opt));
+        grid.appendChild(btn);
+      });
+    }
+
+    function disableOptions() {
+      document.querySelectorAll('.option-btn').forEach(b => b.disabled = true);
+    }
+
+    function handleAnswer(buttonEl, chosen) {
+      if (!currentQuiz || isProcessing) return;
+      isProcessing = true;
+
+      const q = currentQuiz.questions[currentQuiz.currentIndex];
+      const correct = (String(chosen).trim() === String(q.correctAnswer).trim());
+
+      disableOptions();
+
+      if (correct) {
+        buttonEl.classList.add('correct');
+        currentQuiz.score += 1;
+        currentQuiz.results.push({ correct: true, chosen });
+        updateProgressBar(currentQuiz.currentIndex, 'correct');
+
+        // reward: +1 minute
+        userStats.unlockedMinutes += 1;
+        setUnlockedMinutesDisplay();
+
+        try {
+          if (window.confetti) {
+            window.confetti({ particleCount: 80, spread: 60, origin: { y: 0.65 } });
+          }
+        } catch (_) {}
+
+        // move on shortly
+        setTimeout(() => nextQuestion(), 650);
+        return;
+      }
+
+      // wrong
+      buttonEl.classList.add('wrong-shake');
+      currentQuiz.results.push({ correct: false, chosen });
+      updateProgressBar(currentQuiz.currentIndex, 'wrong');
+
+      openBlackboard(q, chosen);
+    }
+
+    function closeBlackboard() {
+      const bb = document.getElementById('blackboard');
+      bb.classList.remove('active');
+      document.getElementById('blackboard-content').innerHTML = '';
+    }
+
+    async function openBlackboard(q, chosen) {
+      const bb = document.getElementById('blackboard');
+      const content = document.getElementById('blackboard-content');
+      content.innerHTML = '';
+
+      const original = document.createElement('div');
+      original.className = 'bb-original-problem';
+
+      const nums = document.createElement('div');
+      nums.className = 'bb-numbers';
+      nums.textContent = (q.pills || []).map(p => p.value).join(" ");
+
+      const ques = document.createElement('div');
+      ques.className = 'bb-question';
+      ques.textContent = q.questionText;
+
+      const meta = document.createElement('div');
+      meta.className = 'bb-meta';
+      meta.textContent = `Your answer: ${chosen} • Correct answer: ${q.correctAnswer}`;
+
+      original.appendChild(nums);
+      original.appendChild(ques);
+      original.appendChild(meta);
+      content.appendChild(original);
+
+      const intro = document.createElement('div');
+      intro.className = 'correction-intro';
+      intro.textContent = `Let's fix it step-by-step.`;
+      content.appendChild(intro);
+
+      bb.classList.add('active');
+
+      // type out steps
+      for (const s of (q.steps || [])) {
+        const block = document.createElement('div');
+        block.className = 'step-block';
+
+        const label = document.createElement('div');
+        label.className = 'step-label';
+        label.textContent = s.label;
+
+        const inst = document.createElement('div');
+        inst.className = 'step-instruction';
+
+        const res = document.createElement('div');
+        res.className = 'step-result';
+
+        block.appendChild(label);
+        block.appendChild(inst);
+        block.appendChild(res);
+        content.appendChild(block);
+
+        await typeText(inst, s.instruction, 0, TYPE_SPEED);
+        await new Promise(r => setTimeout(r, STEP_DELAY));
+        // s.expected may contain HTML (range highlight), so allow innerHTML
+        res.innerHTML = s.expected;
+        await new Promise(r => setTimeout(r, 250));
+      }
+
+      // allow next
+      isProcessing = false;
+    }
+
+    function nextQuestion() {
+      if (!currentQuiz) return;
+
+      currentQuiz.currentIndex += 1;
+
+      if (currentQuiz.currentIndex >= currentQuiz.questions.length) {
+        showResults();
+        return;
+      }
+
+      renderQuestion();
+    }
+
+    function showResults() {
+      document.getElementById('home-view').classList.add('hidden');
+      document.getElementById('quiz-view').classList.add('hidden');
+      document.getElementById('results-view').classList.remove('hidden');
+
+      document.getElementById('final-score').textContent =
+        `Score: ${currentQuiz ? currentQuiz.score : 0} / 10`;
+
+      closeBlackboard();
+      isProcessing = false;
+    }
+
+    // initialize badge on load
+    setUnlockedMinutesDisplay();
+  </script>
 </body>
 </html>
