@@ -1,0 +1,459 @@
+import React, { useState, useEffect } from 'react';
+import { 
+  Clock, 
+  HelpCircle, 
+  CheckCircle2, 
+  Home,
+  ChevronRight,
+  Award,
+  Star,
+  Zap,
+  ArrowRight,
+  SkipForward
+} from 'lucide-react';
+import confetti from 'canvas-confetti';
+import { motion, AnimatePresence } from 'framer-motion';
+
+// --- Types & Data Structures ---
+
+type Topic = 'Mean' | 'Median' | 'Mode' | 'Range' | 'Random';
+
+interface Step {
+  id: string;
+  instruction: string;
+  expected: string; 
+}
+
+interface Question {
+  id: string;
+  topic: Topic;
+  data: number[];
+  questionText: string;
+  options: string[];
+  correctAnswer: string;
+  steps: Step[];
+}
+
+interface UserStats {
+  unlockedMinutes: number;
+  badges: string[];
+}
+
+// --- Question Generator Logic ---
+
+const generateData = (count: number, min: number, max: number) => {
+  return Array.from({ length: count }, () => Math.floor(Math.random() * (max - min + 1)) + min);
+};
+
+const generateQuestion = (topic: Topic, id: string): Question => {
+  const dataSize = Math.floor(Math.random() * 3) + 4; // 4 to 6 numbers
+  let data = generateData(dataSize, 2, 12);
+  let questionText = "";
+  let correctAnswer = "";
+  let steps: Step[] = [];
+
+  switch (topic) {
+    case 'Mean':
+      const sum = data.reduce((a, b) => a + b, 0);
+      const cleanSum = Math.round(sum / data.length) * data.length;
+      if (sum !== cleanSum) data[0] += (cleanSum - sum);
+      const finalMean = cleanSum / data.length;
+      questionText = `What is the mean of these ${data.length} numbers?`;
+      correctAnswer = finalMean.toString();
+      steps = [
+        { id: 's1', instruction: `Add them up: ${data.join(' + ')}`, expected: cleanSum.toString() },
+        { id: 's2', instruction: `How many numbers?`, expected: data.length.toString() },
+        { id: 's3', instruction: `Divide: ${cleanSum} ÷ ${data.length}`, expected: correctAnswer }
+      ];
+      break;
+
+    case 'Median':
+      // 1. Ensure numbers are jumbled (not sorted) for the display
+      const sorted = [...data].sort((a, b) => a - b);
+      // If by chance random generation made it sorted, shuffle it
+      while (JSON.stringify(data) === JSON.stringify(sorted)) {
+        data.sort(() => Math.random() - 0.5);
+      }
+
+      const isEven = data.length % 2 === 0;
+      const mid = Math.floor(data.length / 2);
+      const median = !isEven ? sorted[mid] : (sorted[mid - 1] + sorted[mid]) / 2;
+      
+      questionText = "Find the median (middle number).";
+      correctAnswer = median.toString();
+
+      steps = [
+        { id: 's1', instruction: "Put them in order from least to greatest.", expected: sorted.join(', ') },
+        { 
+          id: 's2', 
+          instruction: `Check count: ${data.length} numbers. Is it Even or Odd?`, 
+          expected: isEven ? "Even: Take the average of 2 middle numbers." : "Odd: Pick the middle number." 
+        },
+        { 
+          id: 's3', 
+          instruction: isEven 
+            ? `Average middle two: (${sorted[mid-1]} + ${sorted[mid]}) ÷ 2` 
+            : `Identify the middle position: ${sorted[mid]}`, 
+          expected: correctAnswer 
+        }
+      ];
+      break;
+
+    case 'Mode':
+      data[0] = 5; data[1] = 5; 
+      const counts: Record<number, number> = {};
+      data.forEach(n => counts[n] = (counts[n] || 0) + 1);
+      const mode = Object.keys(counts).reduce((a, b) => counts[parseInt(a)] > counts[parseInt(b)] ? a : b);
+      questionText = "Which number is the mode?";
+      correctAnswer = mode;
+      steps = [
+        { id: 's1', instruction: "Count frequency of numbers.", expected: `Number ${mode} is most frequent!` }
+      ];
+      break;
+
+    case 'Range':
+      const maxVal = Math.max(...data);
+      const minVal = Math.min(...data);
+      const range = maxVal - minVal;
+      questionText = "What is the range of this set?";
+      correctAnswer = range.toString();
+      steps = [
+        { id: 's1', instruction: "Find Max and Min.", expected: `${maxVal} and ${minVal}` },
+        { id: 's2', instruction: `Subtract: ${maxVal} - ${minVal}`, expected: range.toString() }
+      ];
+      break;
+    
+    default:
+      return generateQuestion('Mean', id);
+  }
+
+  const optionSet = new Set([correctAnswer]);
+  while (optionSet.size < 3) {
+    const randomOffset = Math.floor(Math.random() * 5) + 1;
+    const distractor = (parseFloat(correctAnswer) + (Math.random() > 0.5 ? randomOffset : -randomOffset)).toString();
+    if (distractor !== "0" && !optionSet.has(distractor)) {
+        optionSet.add(distractor);
+    }
+  }
+
+  const options = Array.from(optionSet).sort(() => Math.random() - 0.5);
+
+  return { id, topic, data, questionText, options, correctAnswer, steps };
+};
+
+// --- Components ---
+
+const TypewriterText = ({ text, delay = 0 }: { text: string; delay?: number }) => {
+  const characters = text.split("");
+  return (
+    <motion.span>
+      {characters.map((char, i) => (
+        <motion.span
+          key={i}
+          initial={{ opacity: 0 }}
+          animate={{ opacity: 1 }}
+          transition={{
+            duration: 0.04,
+            delay: delay + i * 0.02,
+            ease: "linear"
+          }}
+        >
+          {char}
+        </motion.span>
+      ))}
+    </motion.span>
+  );
+};
+
+const DancingCat = () => (
+  <motion.div
+    animate={{ 
+      y: [0, -20, 0],
+      rotate: [-5, 5, -5],
+      scale: [1, 1.05, 1]
+    }}
+    transition={{ repeat: Infinity, duration: 0.8 }}
+    className="w-40 h-40 mx-auto mb-4"
+  >
+    <svg viewBox="0 0 100 100" className="w-full h-full">
+      <ellipse cx="50" cy="65" rx="35" ry="25" fill="#6366f1" />
+      <circle cx="50" cy="35" r="25" fill="#6366f1" />
+      <path d="M30 20 L15 0 L45 15 Z" fill="#6366f1" />
+      <path d="M70 20 L85 0 L55 15 Z" fill="#6366f1" />
+      <circle cx="40" cy="35" r="4" fill="white" />
+      <circle cx="60" cy="35" r="4" fill="white" />
+      <circle cx="40" cy="35" r="2" fill="black" />
+      <circle cx="60" cy="35" r="2" fill="black" />
+      <path d="M42 48 Q50 55 58 48" fill="none" stroke="white" strokeWidth="3" strokeLinecap="round" />
+      <motion.path 
+        animate={{ rotate: [-20, 20, -20] }}
+        transition={{ repeat: Infinity, duration: 1 }}
+        d="M80 70 Q95 60 90 85" fill="none" stroke="#818cf8" strokeWidth="5" strokeLinecap="round" 
+      />
+    </svg>
+  </motion.div>
+);
+
+export default function App() {
+  const [view, setView] = useState<'Home' | 'Quiz' | 'Results'>('Home');
+  const [user, setUser] = useState<UserStats>(() => {
+    const saved = localStorage.getItem('meowgi_stats_v3');
+    if (saved) return JSON.parse(saved);
+    return { unlockedMinutes: 0, badges: [] };
+  });
+
+  const [currentQuiz, setCurrentQuiz] = useState<{
+    questions: Question[];
+    currentIndex: number;
+    score: number;
+    topic: Topic;
+  } | null>(null);
+
+  const [feedbackState, setFeedbackState] = useState<'NONE' | 'CORRECT' | 'WRONG'>('NONE');
+  const [showBlackboard, setShowBlackboard] = useState(false);
+
+  useEffect(() => {
+    localStorage.setItem('meowgi_stats_v3', JSON.stringify(user));
+  }, [user]);
+
+  const startQuiz = (topic: Topic) => {
+    const questions: Question[] = [];
+    for (let i = 0; i < 10; i++) {
+      const qTopic = topic === 'Random' 
+        ? (['Mean', 'Median', 'Mode', 'Range'][Math.floor(Math.random() * 4)] as Topic)
+        : topic;
+      questions.push(generateQuestion(qTopic, `q-${topic}-${i}`));
+    }
+    setCurrentQuiz({ questions, currentIndex: 0, score: 0, topic });
+    setView('Quiz');
+    setFeedbackState('NONE');
+    setShowBlackboard(false);
+  };
+
+  const handleAnswer = (selected: string) => {
+    if (!currentQuiz || feedbackState !== 'NONE') return;
+    const q = currentQuiz.questions[currentQuiz.currentIndex];
+    const isCorrect = selected.trim() === q.correctAnswer;
+
+    if (isCorrect) {
+      setFeedbackState('CORRECT');
+      confetti({ particleCount: 80, spread: 70, origin: { y: 0.6 } });
+      setTimeout(nextQuestion, 1500);
+    } else {
+      setFeedbackState('WRONG');
+      setShowBlackboard(true);
+    }
+
+    if (isCorrect) {
+      setCurrentQuiz(prev => prev ? { ...prev, score: prev.score + 1 } : null);
+    }
+  };
+
+  const nextQuestion = () => {
+    if (!currentQuiz) return;
+    const nextIdx = currentQuiz.currentIndex + 1;
+    setFeedbackState('NONE');
+    setShowBlackboard(false);
+
+    if (nextIdx >= 10) {
+      finishQuiz();
+    } else {
+      setCurrentQuiz({ ...currentQuiz, currentIndex: nextIdx });
+    }
+  };
+
+  const finishQuiz = () => {
+    if (!currentQuiz) return;
+    const earned = 20 * (currentQuiz.score / 10) * (currentQuiz.score === 10 ? 2 : 1);
+    setUser(prev => ({ ...prev, unlockedMinutes: prev.unlockedMinutes + earned }));
+    setView('Results');
+  };
+
+  const HomeView = () => (
+    <div className="max-w-4xl mx-auto p-6 space-y-8">
+      <header className="flex justify-between items-center bg-white p-6 rounded-3xl shadow-sm border-b-4 border-indigo-100">
+        <div className="flex items-center gap-4">
+          <div className="w-16 h-16 bg-indigo-500 rounded-2xl flex items-center justify-center text-3xl">🐾</div>
+          <div>
+            <h1 className="text-3xl font-black text-indigo-900">Mr. Meowgi's Dojo</h1>
+            <p className="text-indigo-500 font-medium">Master Stats, Unlock Games!</p>
+          </div>
+        </div>
+        <div className="bg-indigo-900 text-white px-6 py-2 rounded-2xl flex items-center gap-2">
+          <Clock size={20} />
+          <span className="font-bold text-xl">{Math.floor(user.unlockedMinutes)}m</span>
+        </div>
+      </header>
+
+      <div className="grid grid-cols-2 md:grid-cols-3 gap-6">
+        {(['Mean', 'Median', 'Mode', 'Range', 'Random'] as Topic[]).map(t => (
+          <button
+            key={t}
+            onClick={() => startQuiz(t)}
+            className="bg-white p-10 rounded-3xl border-2 border-transparent hover:border-indigo-400 shadow-lg transition-all group"
+          >
+            <h3 className="text-3xl font-black text-indigo-900 group-hover:scale-110 transition-transform">{t}</h3>
+            <div className="mt-3 flex items-center justify-center gap-1 text-indigo-300">
+              <Zap size={16} /> <span className="text-xs font-bold uppercase tracking-widest">10 Qs</span>
+            </div>
+          </button>
+        ))}
+      </div>
+    </div>
+  );
+
+  const QuizView = () => {
+    if (!currentQuiz) return null;
+    const q = currentQuiz.questions[currentQuiz.currentIndex];
+
+    return (
+      <div className="max-w-4xl mx-auto p-4 space-y-4">
+        <div className="flex justify-between items-center px-2">
+          <button onClick={() => setView('Home')} className="text-indigo-400 font-bold flex items-center gap-1 hover:text-indigo-600 transition-colors">
+            <Home size={20} /> Exit
+          </button>
+          <div className="bg-indigo-100 text-indigo-800 px-5 py-1 rounded-full font-black text-xs shadow-sm">
+            Question {currentQuiz.currentIndex + 1} / 10
+          </div>
+        </div>
+
+        <motion.div 
+          layout
+          className="bg-white rounded-[2.5rem] shadow-2xl overflow-hidden border-b-[8px] border-indigo-50"
+        >
+          {/* Question Top Section */}
+          <div className="p-8 text-center space-y-6">
+            <div className="flex flex-wrap gap-3 justify-center">
+              {q.data.map((n, i) => (
+                <motion.div 
+                  initial={{ scale: 0 }} animate={{ scale: 1 }} transition={{ delay: i * 0.05 }}
+                  key={i} className="w-14 h-14 bg-indigo-50 rounded-2xl flex items-center justify-center text-2xl font-black text-indigo-800 border-2 border-indigo-100 shadow-sm"
+                >
+                  {n}
+                </motion.div>
+              ))}
+            </div>
+            <h2 className="text-3xl font-black text-indigo-900 leading-tight">{q.questionText}</h2>
+          </div>
+
+          {/* Interactive Area */}
+          <div className="relative min-h-[340px]">
+            {/* Options Area */}
+            <div className="p-8 grid grid-cols-1 gap-3">
+              {q.options.map(opt => (
+                <button
+                  key={opt}
+                  disabled={feedbackState !== 'NONE'}
+                  onClick={() => handleAnswer(opt)}
+                  className={`p-5 rounded-2xl border-2 text-xl font-black transition-all flex justify-between items-center ${
+                    feedbackState === 'CORRECT' && opt === q.correctAnswer
+                    ? 'bg-green-500 border-green-600 text-white'
+                    : 'bg-indigo-50 border-indigo-100 text-indigo-800 hover:bg-indigo-500 hover:text-white'
+                  }`}
+                >
+                  {opt}
+                  {feedbackState === 'CORRECT' && opt === q.correctAnswer && <Star fill="white" size={20}/>}
+                  {feedbackState === 'NONE' && <ChevronRight className="opacity-30" size={20} />}
+                </button>
+              ))}
+            </div>
+
+            {/* Blackboard Overlay */}
+            <AnimatePresence>
+              {showBlackboard && (
+                <motion.div 
+                  initial={{ y: "100%" }}
+                  animate={{ y: 0 }}
+                  exit={{ y: "100%" }}
+                  transition={{ type: "spring", damping: 25, stiffness: 120 }}
+                  className="absolute inset-0 bg-[#1a1a1a] z-20 flex flex-col"
+                >
+                  <div className="h-4 bg-[#4a3728] w-full border-b border-[#2a1a0a]" />
+                  
+                  <div className="flex-1 p-6 font-mono text-white overflow-hidden flex flex-col">
+                    <div className="flex items-center gap-2 mb-4 border-b border-white/10 pb-2">
+                      <span className="text-2xl">🐾</span>
+                      <h4 className="text-sm font-bold text-yellow-400 uppercase tracking-widest">Mr. Meowgi's Solution</h4>
+                    </div>
+
+                    <div className="flex-1 space-y-4 overflow-y-auto pr-2 custom-scrollbar">
+                      {q.steps.map((step, idx) => (
+                        <div key={step.id} className="space-y-1">
+                          <p className="text-green-400 font-bold text-xs flex items-center gap-2">
+                            <CheckCircle2 size={12} /> Step {idx + 1}
+                          </p>
+                          <div className="text-lg font-medium leading-snug">
+                            <TypewriterText text={step.instruction} delay={idx * 0.8} />
+                          </div>
+                          <motion.div 
+                            initial={{ opacity: 0, x: -10 }}
+                            animate={{ opacity: 1, x: 0 }}
+                            transition={{ delay: (idx * 0.8) + 0.5 }}
+                            className="bg-white/5 px-3 py-2 rounded-lg text-yellow-300 font-black text-xl border-l-2 border-yellow-400 inline-block mt-1"
+                          >
+                            = {step.expected}
+                          </motion.div>
+                        </div>
+                      ))}
+                    </div>
+
+                    {/* Compact Controls */}
+                    <div className="mt-4 flex flex-col sm:flex-row gap-3 justify-between items-center pt-4 border-t border-white/10">
+                      <button 
+                        onClick={nextQuestion}
+                        className="w-full sm:w-auto bg-yellow-400 text-black px-8 py-4 rounded-2xl font-black text-xl hover:bg-yellow-300 transition-all flex items-center justify-center gap-2 shadow-[0_6px_0_rgb(161,120,0)] active:translate-y-[3px] active:shadow-[0_3px_0_rgb(161,120,0)]"
+                      >
+                        Next Question <ArrowRight size={22} />
+                      </button>
+                      
+                      <button 
+                        onClick={nextQuestion}
+                        className="w-full sm:w-auto bg-white/10 text-white hover:bg-white/20 px-5 py-3 rounded-xl font-bold text-sm flex items-center justify-center gap-2 transition-colors border border-white/20 uppercase tracking-wider"
+                      >
+                        <SkipForward size={18} /> Skip Explanation
+                      </button>
+                    </div>
+                  </div>
+                </motion.div>
+              )}
+            </AnimatePresence>
+          </div>
+        </motion.div>
+      </div>
+    );
+  };
+
+  const ResultsView = () => (
+    <div className="max-w-xl mx-auto p-6 text-center">
+      <motion.div 
+        initial={{ scale: 0.9, opacity: 0 }} animate={{ scale: 1, opacity: 1 }}
+        className="bg-white p-12 rounded-[3.5rem] shadow-2xl border-b-[12px] border-indigo-100 space-y-8"
+      >
+        <DancingCat />
+        <div className="space-y-2">
+          <h2 className="text-5xl font-black text-indigo-900">Training Done!</h2>
+          <p className="text-2xl font-bold text-indigo-500">You got {currentQuiz?.score || 0} / 10</p>
+        </div>
+
+        <div className="bg-yellow-50 p-6 rounded-3xl border-2 border-yellow-200">
+          <p className="text-yellow-700 font-black text-xl flex items-center justify-center gap-2">
+            <Clock /> +{Math.floor(20 * ((currentQuiz?.score || 0)/10) * ((currentQuiz?.score || 0) === 10 ? 2 : 1))} Mins!
+          </p>
+        </div>
+
+        <div className="grid grid-cols-2 gap-4">
+          <button onClick={() => setView('Home')} className="bg-indigo-100 text-indigo-700 p-5 rounded-2xl font-black text-xl">Dojo</button>
+          <button onClick={() => startQuiz(currentQuiz?.topic || 'Mean')} className="bg-indigo-600 text-white p-5 rounded-2xl font-black text-xl shadow-lg">Retry</button>
+        </div>
+      </motion.div>
+    </div>
+  );
+
+  return (
+    <div className="min-h-screen bg-[#f1f5f9] py-8 selection:bg-indigo-200 selection:text-indigo-900">
+      {view === 'Home' && <HomeView />}
+      {view === 'Quiz' && <QuizView />}
+      {view === 'Results' && <ResultsView />}
+    </div>
+  );
+}
