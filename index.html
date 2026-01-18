@@ -365,7 +365,7 @@
         const mx = Math.max(...data), mn = Math.min(...data);
         return {
           data, questionText: "Calculate the Range", correctAnswer: String(mx - mn),
-          howTo: "Range is the 'gap' or distance between the highest champion and the lowest underdog.",
+          howTo: "Range is the 'gap' or distance between the highest and the lowest number.",
           steps: [
             { label: "Step 1", ins: `Identify our boundaries. The highest is ${mx} and the lowest is ${mn}.`, res: `${mx}, ${mn}` },
             { label: "Step 2", ins: `Find the distance by subtracting the low from the high: ${mx} - ${mn}`, res: String(mx - mn) }
