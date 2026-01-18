@@ -311,6 +311,23 @@
       return m;
     }
 
+    function groupedRuns(arr) {
+    const sorted = [...arr].sort((a, b) => a - b);
+    const out = [];
+    let run = [sorted[0]];
+
+    for (let i = 1; i < sorted.length; i++) {
+      if (sorted[i] === run[0]) run.push(sorted[i]);
+      else {
+        out.push(`[${run.join(", ")}]`);
+        run = [sorted[i]];
+      }
+    }
+    out.push(`[${run.join(", ")}]`);
+    return out.join(" ");
+  }
+
+
     function sortedCopy(arr) { return [...arr].sort((a, b) => a - b); }
 
     function buildNumberOptions(correctStr, count = 4) {
@@ -469,7 +486,7 @@
           topic: "Mean",
           typeLabel: "Mean • Type 3 (Missing number given mean)",
           data: known,
-          pills: known.map(v => ({ value: v, unknown: false })).concat([{ value: "?", unknown: true }]),
+          pills:[],
           questionText: `The mean of ${n} numbers is ${mean}. The numbers are ${known.join(", ")}, y. Find y.`,
           correctAnswer,
           answerKind: "number",
@@ -489,12 +506,14 @@
       const x = requiredSum - knownSum;
       const correctAnswer = formatNumber(x);
 
-      const steps = [
-        step("Option A (fast)", `Compute requiredSum = mean × n = ${mean} × ${n}`, `= ${requiredSum}`),
-        step("Option A (fast)", `Compute knownSum = ${known.join(" + ")}`, `= ${knownSum}`),
-        step("Option A (fast)", `Compute needed x = requiredSum − knownSum`, `= ${requiredSum} − ${knownSum} = ${correctAnswer}`),
-        step("Pick the choice", `Pick the option that matches x`, `x = ${correctAnswer}`)
-      ];
+     const steps = [
+      step("Step 1", `Compute the total needed = mean × n = ${mean} × ${n}`, `= ${requiredSum}`),
+      step("Step 2", `Add the known numbers`, `= ${known.join(" + ")} = ${knownSum}`),
+      step("Step 3", `Find x = total needed − known total`, `= ${requiredSum} − ${knownSum} = ${correctAnswer}`),
+      step("Step 4", `Pick the option that matches x`, `x = ${correctAnswer}`)
+     ];
+
+
 
       const options = new Set([correctAnswer]);
       while (options.size < 4) {
@@ -523,13 +542,13 @@
       const delta = randInt(1, 4);
       const meanChange = delta / n;
       const newMean = oldMean + meanChange;
-
       const correctAnswer = formatNumber(newMean);
+
       const steps = [
-        step("Step 1", `Identify change in total`, `+${delta}`),
-        step("Step 2", `Spread change over n → mean change = total change / n`, `= ${delta} ÷ ${n} = ${formatNumber(meanChange)}`),
-        step("Step 3", `New mean = old mean + mean change`, `= ${oldMean} + ${formatNumber(meanChange)} = ${correctAnswer}`),
-        step("Quick check", `Mean should move in the same direction as the change`, `It increased ✅`)
+        step("Step 1", `Mean = total ÷ count. We know mean = ${oldMean} and count = ${n}.`, `So we can find the total.`),
+        step("Step 2", `Old total = mean × count`, `= ${oldMean} × ${n} = ${oldMean * n}`),
+        step("Step 3", `One score increases by ${delta}, so add ${delta} to the total`, `New total = ${oldMean * n} + ${delta} = ${(oldMean * n) + delta}`),
+        step("Step 4", `New mean = new total ÷ count`, `= ${(oldMean * n) + delta} ÷ ${n} = ${correctAnswer}`)
       ];
 
       return {
@@ -699,14 +718,13 @@
       const winners = Object.keys(m).filter(k => m[k] === maxFreq).map(Number);
 
       const correctAnswer = String(winners[0]);
-      const freqLines = Object.keys(m).sort((a, b) => Number(a) - Number(b))
-        .map(k => `${k}: ${m[k]}`).join(" | ");
+      const grouped = groupedRuns(data);
 
       const steps = [
-        step("Step 1", `Count frequency of each value`, `= ${freqLines}`),
-        step("Step 2", `Identify which appears most`, `Highest frequency = ${maxFreq}`),
-        step("Step 3", `Mode = that value`, `= ${correctAnswer}`),
-        step("Quick check", `Confirm it appears more than any other`, `${correctAnswer} appears ${maxFreq} times ✅`)
+       step("Step 1", `Sort and group matching numbers`, `= ${grouped}`),
+       step("Step 2", `Find the biggest group (most repeats)`, `Biggest group size = ${maxFreq}`),
+       step("Step 3", `Mode = that value`, `= ${correctAnswer}`),
+       step("Quick check", `Confirm it appears more than any other`, `${correctAnswer} appears ${maxFreq} times ✅`)
       ];
 
       return {
@@ -735,13 +753,12 @@
       const winners = Object.keys(m).filter(k => m[k] === maxFreq).map(Number).sort((x, y) => x - y);
 
       const correctAnswer = winners.join(" and ");
-      const freqLines = Object.keys(m).sort((x, y) => Number(x) - Number(y))
-        .map(k => `${k}: ${m[k]}`).join(" | ");
+      const grouped = groupedRuns(data);
 
       const steps = [
-        step("Step 1", `Count frequencies`, `= ${freqLines}`),
-        step("Step 2", `Find the highest frequency`, `Highest frequency = ${maxFreq}`),
-        step("Step 3", `List every value with that frequency`, `= ${correctAnswer}`),
+        step("Step 1", `Sort and group matching numbers`, `= ${grouped}`),
+        step("Step 2", `Find the biggest group size`, `Biggest group size = ${maxFreq}`),
+        step("Step 3", `Any number in a biggest group is a mode`, `= ${correctAnswer}`),
         step("Quick check", `No other value has higher frequency`, `✅`)
       ];
 
@@ -775,12 +792,11 @@
       }
 
       const m = countsMap(data);
-      const freqLines = Object.keys(m).sort((x, y) => Number(x) - Number(y))
-        .map(k => `${k}: ${m[k]}`).join(" | ");
+      const grouped = groupedRuns(data);
 
       const correctAnswer = "No mode";
       const steps = [
-        step("Step 1", `Count frequencies`, `= ${freqLines}`),
+        step("Step 1", `Sort and group matching numbers`, `= ${grouped}`),
         step("Step 2", `If all frequencies are the same (usually all 1)`, `All are 1`),
         step("Step 3", `Then there is no mode`, `= ${correctAnswer}`),
         step("Quick check", `Nothing repeats more than others`, `✅`)
@@ -840,7 +856,7 @@
         typeLabel: "Mode • Type 4 (Pick x to make target the mode)",
         data,
         pills: data.map(v => ({ value: v, unknown: false })).concat([{ value: "x", unknown: true }]),
-        questionText: `${data.join(", ")}, x. Make ${target} the mode. What should x be?`,
+        questionText: `The numbers are ${data.join(", ")}, x. What value of x will make ${target} the mode?`,
         correctAnswer,
         answerKind: "number",
         steps,
